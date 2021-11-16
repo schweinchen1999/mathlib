@@ -834,13 +834,24 @@ variables [ordered_ring 𝕜]
 section add_comm_group
 variables [add_comm_group E] [add_comm_group F] [module 𝕜 E] [module 𝕜 F] {s : set E}
 
+lemma convex.one_sub_smul_add_smul_mem (hs : convex 𝕜 s) {x y : E} (hx : x ∈ s) (hy : y ∈ s)
+  {t : 𝕜} (ht : t ∈ Icc (0 : 𝕜) 1) :
+  (1 - t) • x + t • y ∈ s :=
+hs hx hy (sub_nonneg_of_le ht.2) ht.1 (sub_add_cancel _ _)
+
+lemma convex.smul_add_one_sub_smul_mem (hs : convex 𝕜 s) {x y : E} (hx : x ∈ s) (hy : y ∈ s)
+  {t : 𝕜} (ht : t ∈ Icc (0 : 𝕜) 1) :
+  t • x + (1 - t) • y ∈ s :=
+by { rw add_comm, exact hs.one_sub_smul_add_smul_mem hy hx ht }
+
+
 lemma convex.add_smul_mem (hs : convex 𝕜 s) {x y : E} (hx : x ∈ s) (hy : x + y ∈ s)
   {t : 𝕜} (ht : t ∈ Icc (0 : 𝕜) 1) : x + t • y ∈ s :=
 begin
   have h : x + t • y = (1 - t) • x + t • (x + y),
   { rw [smul_add, ←add_assoc, ←add_smul, sub_add_cancel, one_smul] },
   rw h,
-  exact hs hx hy (sub_nonneg_of_le ht.2) ht.1 (sub_add_cancel _ _),
+  exact hs.one_sub_smul_add_smul_mem hx hy ht,
 end
 
 lemma convex.smul_mem_of_zero_mem (hs : convex 𝕜 s) {x : E} (zero_mem : (0 : E) ∈ s) (hx : x ∈ s)

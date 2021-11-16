@@ -264,4 +264,29 @@ instance normed_space.loc_path_connected : loc_path_connected_space E :=
 loc_path_connected_of_bases (λ x, metric.nhds_basis_ball)
   (λ x r r_pos, (convex_ball x r).is_path_connected $ by simp [r_pos])
 
+open_locale topological_space
+open metric
+
+/-- Given a convex set `s` which is a neighborhood of `0`, and `t < 1`, there exists a positive
+`ε` such that the `ε`-thickening of `t • s` is contained in `s`. -/
+lemma exists_smul_add_closed_ball_subset {s : set E} (hs : s ∈ 𝓝 (0 : E)) (s_conv : convex ℝ s)
+  {t : ℝ} (tpos : 0 ≤ t) (ht : t < 1) :
+  ∃ ε > (0 : ℝ), t • s + closed_ball (0 : E) ε ⊆ s :=
+begin
+  have I : 0 < 1 - t, by linarith,
+  obtain ⟨δ, δpos, hδ⟩ : ∃ (δ : ℝ) (H : 0 < δ), closed_ball (0 : E) δ ⊆ s :=
+    nhds_basis_closed_ball.mem_iff.1 hs,
+  refine ⟨(1 - t) * δ, mul_pos (by linarith) δpos, λ x hx, _⟩,
+  obtain ⟨y, ys, z, z_le, rfl⟩ : ∃ (y : E), y ∈ s ∧ ∃ (z : E), ∥z∥ ≤ (1 - t) * δ ∧ t • y + z = x,
+    by simpa only [mem_add, mem_smul_set, mem_closed_ball, exists_exists_and_eq_and,
+                   dist_zero_right, exists_and_distrib_left] using hx,
+  have A : z = (1 - t) • ((1 - t)⁻¹ • z), by simp only [smul_smul, mul_inv_cancel I.ne', one_smul],
+  rw A,
+  have zs : (1 - t)⁻¹ • z ∈ s,
+  { apply hδ,
+    simp only [norm_smul, ←div_eq_inv_mul, mem_closed_ball, dist_zero_right, normed_field.norm_inv],
+    rwa [real.norm_eq_abs, abs_of_nonneg I.le, div_le_iff' I] },
+  exact s_conv.smul_add_one_sub_smul_mem ys zs ⟨tpos, ht.le⟩,
+end
+
 end normed_space
