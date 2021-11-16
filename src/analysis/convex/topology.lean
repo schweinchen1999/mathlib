@@ -269,11 +269,11 @@ open metric
 
 /-- Given a convex set `s` which is a neighborhood of `0`, and `t < 1`, there exists a positive
 `ε` such that the `ε`-thickening of `t • s` is contained in `s`. -/
-lemma exists_smul_add_closed_ball_subset {s : set E} (hs : s ∈ 𝓝 (0 : E)) (s_conv : convex ℝ s)
-  {t : ℝ} (tpos : 0 ≤ t) (ht : t < 1) :
+lemma convex.exists_smul_add_closed_ball_subset
+  {s : set E} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : E)) {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
   ∃ ε > (0 : ℝ), t • s + closed_ball (0 : E) ε ⊆ s :=
 begin
-  have I : 0 < 1 - t, by linarith,
+  have I : 0 < 1 - t, by linarith [ht.2],
   obtain ⟨δ, δpos, hδ⟩ : ∃ (δ : ℝ) (H : 0 < δ), closed_ball (0 : E) δ ⊆ s :=
     nhds_basis_closed_ball.mem_iff.1 hs,
   refine ⟨(1 - t) * δ, mul_pos (by linarith) δpos, λ x hx, _⟩,
@@ -286,7 +286,7 @@ begin
   { apply hδ,
     simp only [norm_smul, ←div_eq_inv_mul, mem_closed_ball, dist_zero_right, normed_field.norm_inv],
     rwa [real.norm_eq_abs, abs_of_nonneg I.le, div_le_iff' I] },
-  exact s_conv.smul_add_one_sub_smul_mem ys zs ⟨tpos, ht.le⟩,
+  exact s_conv.smul_add_one_sub_smul_mem ys zs ⟨ht.1, ht.2.le⟩,
 end
 
 end normed_space

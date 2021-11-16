@@ -1295,3 +1295,23 @@ has_strict_fderiv_at_of_has_fderiv_at_of_continuous_at (hder.mono (λ y hy, hy.h
   (smul_rightL 𝕜 _ _ 1).continuous.continuous_at.comp hcont
 
 end is_R_or_C
+
+open metric
+open_locale pointwise
+
+lemma zoug {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x)
+  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
+  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=
+begin
+  have : ∃ ε > (0 : ℝ), t • s + closed_ball (0 : F) ε ⊆ s,
+  { apply s_conv.exists_smul_add_closed_ball_subset,
+
+  },
+  apply eventually_of_forall,
+  assume r y hy,
+  obtain ⟨z, f'z, rfl⟩ : ∃ (z : E), f' z ∈ s ∧ x + r • t • z = y,
+    by simpa only [mem_smul_set, image_add_left, exists_exists_and_eq_and, mem_preimage,
+                   singleton_add, neg_add_eq_sub, eq_sub_iff_add_eq'] using hy, clear hy,
+  simp only [image_add_left, mem_preimage, singleton_add, neg_add_eq_sub],
+end
