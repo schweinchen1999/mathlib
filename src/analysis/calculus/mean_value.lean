@@ -1296,15 +1296,6 @@ has_strict_fderiv_at_of_has_fderiv_at_of_continuous_at (hder.mono (λ y hy, hy.h
 
 end is_R_or_C
 
-lemma metric.bounded.subset_ball_lt {α : Type*} [metric_space α] {s : set α}
-  (h : bounded s) (a : ℝ) (c : α) : ∃ r, a < r ∧ s ⊆ closed_ball c r :=
-begin
-  rcases h.subset_ball c with ⟨r, hr⟩,
-  refine ⟨max r (a+1), lt_of_lt_of_le (by linarith) (le_max_right _ _), _⟩,
-  exact subset.trans hr (closed_ball_subset_closed_ball (le_max_left _ _))
-end
-
-
 open metric
 open_locale pointwise
 
@@ -1364,4 +1355,32 @@ begin
     by { apply hδ, simpa only [mem_closed_ball, dist_zero_right] using I }
   ... ≤ ε / R * (r * R) : mul_le_mul_of_nonneg_left I₀ (div_nonneg εpos.le Rpos.le)
   ... = ε * r : by { field_simp [Rpos.ne'], ring }
+end
+
+/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
+`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
+Here we prove that the rescaling of the former by a fixed factor `t < 1` is contained in the latter,
+for small enough `r`, if `f` is a local homeomorphism. -/
+lemma eventually_preimage_smul_subset_preimage_fderiv
+  {f : local_homeomorph E F} {x : E} {f' : E ≃L[ℝ] F}
+  (hx : x ∈ f.source) (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
+  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
+  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f.source ∩ f ⁻¹' ({f x} + r • t • s) ⊆ {x} + r • f' ⁻¹' (s) :=
+begin
+  have h'f : has_fderiv_at f.symm (f'.symm : F →L[ℝ] E) (f x) := f.has_fderiv_at_symm' hx hf,
+  let s' := f' ⁻¹' s,
+  have s'_conv : convex ℝ s' := s_conv.linear_preimage f',
+  have hs' : s' ∈ 𝓝 (0 : E),
+  { apply f'.continuous.continuous_at,
+    simpa only [continuous_linear_equiv.map_zero] using hs },
+  have h's' : bounded s' := f'.antilipschitz.bounded_preimage h's,
+  filter_upwards [eventually_smul_preimage_fderiv_subset_preimage h'f s'_conv hs' h's' ht],
+  assume r hr,
+  simp only [f'.symm_preimage_preimage, s', hx, local_homeomorph.left_inv] at hr,
+  calc f.source ∩ f ⁻¹' ({f x} + r • t • s)
+    ⊆ f.source ∩ f ⁻¹' ((f.symm) ⁻¹' ({x} + r • ⇑f' ⁻¹' s)) :
+      inter_subset_inter_right _ (preimage_mono hr)
+    ... = f.source ∩ ({x} + r • ⇑f' ⁻¹' s) : f.source_inter_preimage_inv_preimage _
+    ... ⊆ {x} + r • ⇑f' ⁻¹' s : inter_subset_right _ _
 end

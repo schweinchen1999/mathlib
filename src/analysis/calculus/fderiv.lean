@@ -2784,6 +2784,16 @@ lemma local_homeomorph.has_fderiv_at_symm (f : local_homeomorph E F) {f' : E ≃
   has_fderiv_at f.symm (f'.symm : F →L[𝕜] E) a :=
 htff'.of_local_left_inverse (f.symm.continuous_at ha) (f.eventually_right_inverse ha)
 
+/-- If `f` is a local homeomorphism defined on a neighbourhood of `a`, and `f` has an
+invertible derivative `f'` at `a`, then `f.symm` has the derivative `f'⁻¹` at `f a`.
+
+This is one of the easy parts of the inverse function theorem: it assumes that we already have
+an inverse function. -/
+lemma local_homeomorph.has_fderiv_at_symm' (f : local_homeomorph E F) {f' : E ≃L[𝕜] F} {a : E}
+  (ha : a ∈ f.source) (htff' : has_fderiv_at f (f' : E →L[𝕜] F) a) :
+  has_fderiv_at f.symm (f'.symm : F →L[𝕜] E) (f a) :=
+f.has_fderiv_at_symm (f.map_source ha) $ by simpa only [ha, f.left_inv] using htff'
+
 lemma has_fderiv_within_at.eventually_ne (h : has_fderiv_within_at f f' s x)
   (hf' : ∃ C, ∀ z, ∥z∥ ≤ C * ∥f' z∥) :
   ∀ᶠ z in 𝓝[s \ {x}] x, f z ≠ f x :=
