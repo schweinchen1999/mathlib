@@ -1296,22 +1296,72 @@ has_strict_fderiv_at_of_has_fderiv_at_of_continuous_at (hder.mono (λ y hy, hy.h
 
 end is_R_or_C
 
+lemma metric.bounded.subset_ball_lt {α : Type*} [metric_space α] {s : set α}
+  (h : bounded s) (a : ℝ) (c : α) : ∃ r, a < r ∧ s ⊆ closed_ball c r :=
+begin
+  rcases h.subset_ball c with ⟨r, hr⟩,
+  refine ⟨max r (a+1), lt_of_lt_of_le (by linarith) (le_max_right _ _), _⟩,
+  exact subset.trans hr (closed_ball_subset_closed_ball (le_max_left _ _))
+end
+
+
 open metric
 open_locale pointwise
 
-lemma zoug {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x)
+/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
+`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
+Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the former,
+for small enough `r`. -/
+lemma eventually_smul_preimage_fderiv_subset_preimage
+  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
   {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
   {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
   ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=
 begin
-  have : ∃ ε > (0 : ℝ), t • s + closed_ball (0 : F) ε ⊆ s,
-  { apply s_conv.exists_smul_add_closed_ball_subset,
-
-  },
-  apply eventually_of_forall,
-  assume r y hy,
+  obtain ⟨ε, εpos, hε⟩ : ∃ (ε : ℝ) (H : 0 < ε), t • s + closed_ball (0 : F) ε ⊆ s :=
+    s_conv.exists_smul_add_closed_ball_subset hs ht,
+  obtain ⟨R, Rpos, Rs⟩ : ∃ R, 0 < R ∧ f' ⁻¹' s ⊆ closed_ball (0 : E) R :=
+    (f'.antilipschitz.bounded_preimage h's).subset_ball_lt _ _,
+  obtain ⟨δ, δpos, hδ⟩ :
+    ∃ (δ : ℝ) (H : 0 < δ), closed_ball 0 δ ⊆ {z : E | ∥f (x + z) - f x - f' z∥ ≤ (ε / R) * ∥z∥} :=
+      nhds_basis_closed_ball.mem_iff.1
+        ((has_fderiv_at_iff_is_o_nhds_zero.1 hf).def (div_pos εpos Rpos)),
+  have : Ioc (0 : ℝ) (δ / R) ∈ 𝓝[Ioi (0 : ℝ)] 0,
+  { apply Ioc_mem_nhds_within_Ioi,
+    simp only [div_pos δpos Rpos, left_mem_Ico] },
+  filter_upwards [this],
+  rintros r ⟨rpos, rle⟩ y hy,
   obtain ⟨z, f'z, rfl⟩ : ∃ (z : E), f' z ∈ s ∧ x + r • t • z = y,
     by simpa only [mem_smul_set, image_add_left, exists_exists_and_eq_and, mem_preimage,
                    singleton_add, neg_add_eq_sub, eq_sub_iff_add_eq'] using hy, clear hy,
+  have z_le : ∥z∥ ≤ R, by simpa only [mem_closed_ball, dist_zero_right] using Rs f'z,
   simp only [image_add_left, mem_preimage, singleton_add, neg_add_eq_sub],
+  let u := f (x + (r * t) • z) - f x - f' ((r * t) • z),
+  suffices H : (r * t) • f' z + u ∈ r • s,
+  { convert H, simp only [add_sub_cancel'_right, smul_smul, u, continuous_linear_equiv.map_smul] },
+  let v := r ⁻¹ • u,
+  suffices H : t • f' z + v ∈ s,
+  { have : (r * t) • f' z + u = r • (t • f' z + v),
+      by simp only [smul_smul, mul_inv_cancel rpos.ne', smul_add, one_smul],
+    rw this,
+    exact smul_mem_smul_set H },
+  suffices H : ∥u∥ ≤ ε * r,
+  { apply hε,
+    apply set.add_mem_add (smul_mem_smul_set f'z),
+    simpa only [norm_smul, real.norm_eq_abs, abs_of_nonneg (inv_nonneg.mpr rpos.le),
+      ← div_eq_inv_mul, div_le_iff rpos, mem_closed_ball, dist_zero_right] using H },
+  have I₀ : ∥(r * t) • z∥ ≤ r * R, from calc
+    ∥(r * t) • z∥ = r * t * ∥z∥ :
+      by simp only [norm_smul, real.norm_eq_abs, abs_of_nonneg, mul_nonneg rpos.le ht.left]
+    ... ≤ r * 1 * R : by apply_rules [mul_le_mul, ht.2.le, ht.1, norm_nonneg, mul_nonneg,
+                                      zero_le_one, le_refl, rpos.le]
+    ... = r * R : by rw [mul_one],
+  have I : ∥(r * t) • z∥ ≤ δ, from calc
+    ∥(r * t) • z∥ ≤ r * R : I₀
+    ... ≤ (δ / R) * R : mul_le_mul_of_nonneg_right rle Rpos.le
+    ... = δ : by field_simp [Rpos.ne'],
+  calc ∥u∥ ≤ ε / R * ∥(r * t) • z∥ :
+    by { apply hδ, simpa only [mem_closed_ball, dist_zero_right] using I }
+  ... ≤ ε / R * (r * R) : mul_le_mul_of_nonneg_left I₀ (div_nonneg εpos.le Rpos.le)
+  ... = ε * r : by { field_simp [Rpos.ne'], ring }
 end
