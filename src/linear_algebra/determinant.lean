@@ -11,6 +11,7 @@ import linear_algebra.matrix.reindex
 import linear_algebra.multilinear.basis
 import linear_algebra.dual
 import ring_theory.algebra_tower
+import tactic.field_simp
 
 /-!
 # Determinant of families of vectors
@@ -279,11 +280,24 @@ begin
   simpa using (linear_map.to_matrix_comp v v' v f.symm f).symm
 end
 
+/-- Multiplying the determinants of `f` and `f.symm` gives `1` when `f` is a linear equiv. -/
+lemma linear_equiv.det_mul_det_symm {A : Type*} [comm_ring A] [is_domain A] [module A M]
+  (f : M ≃ₗ[A] M) : (f : M →ₗ[A] M).det * (f.symm : M →ₗ[A] M).det = 1 :=
+by simp only [←linear_map.det_comp, linear_equiv.refl_to_linear_map, linear_equiv.symm_trans_self,
+    linear_map.det_id, linear_equiv.comp_coe]
+
 /-- Specialization of `linear_equiv.is_unit_det` -/
 lemma linear_equiv.is_unit_det' {A : Type*} [comm_ring A] [is_domain A] [module A M]
   (f : M ≃ₗ[A] M) : is_unit (linear_map.det (f : M →ₗ[A] M)) :=
-by haveI := classical.dec_eq M; exact
-(f : M →ₗ[A] M).det_cases (λ s b, f.is_unit_det _ _) is_unit_one
+is_unit_of_mul_eq_one _ _ f.det_mul_det_symm
+
+/-- The determinant of `f.symm` is the inverse of that of `f` when `f` is a linear equiv. -/
+lemma linear_equiv.det_symm {𝕜 : Type*} [field 𝕜] [module 𝕜 M]
+  (f : M ≃ₗ[𝕜] M) : (f.symm : M →ₗ[𝕜] M).det = (f : M →ₗ[𝕜] M).det ⁻¹ :=
+begin
+  field_simp [is_unit.ne_zero f.is_unit_det'],
+  simpa only [mul_comm] using f.det_mul_det_symm
+end
 
 /-- Builds a linear equivalence from a linear map whose determinant in some bases is a unit. -/
 @[simps]

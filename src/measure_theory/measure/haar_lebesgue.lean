@@ -151,6 +151,27 @@ calc μ (f ⁻¹' s) = measure.map f μ s :
 ... = ennreal.of_real (abs (f.det)⁻¹) * μ s :
   by { rw map_linear_map_add_haar_eq_smul_add_haar μ hf, refl }
 
+@[simp] lemma haar_preimage_continuous_linear_map
+  {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
+  [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
+  {f : E →L[ℝ] E} (hf : linear_map.det (f : E →ₗ[ℝ] E) ≠ 0) (s : set E) :
+  μ (f ⁻¹' s) = ennreal.of_real (abs (linear_map.det (f : E →ₗ[ℝ] E))⁻¹) * μ s :=
+haar_preimage_linear_map μ hf s
+
+@[simp] lemma haar_preimage_linear_equiv
+  {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
+  [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
+  (f : E ≃ₗ[ℝ] E) (s : set E) :
+  μ (f ⁻¹' s) = ennreal.of_real (abs (f.symm : E →ₗ[ℝ] E).det) * μ s :=
+begin
+  have A : (f : E →ₗ[ℝ] E).det ≠ 0 := (linear_equiv.is_unit_det' f).ne_zero,
+  convert haar_preimage_linear_map μ A s,
+  simp,
+end
+
+
+#exit
+
 /-!
 ### Basic properties of Haar measures on real vector spaces
 -/
@@ -171,14 +192,14 @@ begin
     monoid_hom.map_one],
 end
 
-lemma add_haar_preimage_smul {r : ℝ} (hr : r ≠ 0) (s : set E) :
+@[simp] lemma add_haar_preimage_smul {r : ℝ} (hr : r ≠ 0) (s : set E) :
   μ (((•) r) ⁻¹' s) = ennreal.of_real (abs (r ^ (finrank ℝ E))⁻¹) * μ s :=
 calc μ (((•) r) ⁻¹' s) = measure.map ((•) r) μ s :
   ((homeomorph.smul (is_unit_iff_ne_zero.2 hr).unit).to_measurable_equiv.map_apply s).symm
 ... = ennreal.of_real (abs (r^(finrank ℝ E))⁻¹) * μ s : by { rw map_add_haar_smul μ hr, refl }
 
 /-- Rescaling a set by a factor `r` multiplies its measure by `abs (r ^ dim)`. -/
-lemma add_haar_smul (r : ℝ) (s : set E) :
+@[simp] lemma add_haar_smul (r : ℝ) (s : set E) :
   μ (r • s) = ennreal.of_real (abs (r ^ (finrank ℝ E))) * μ s :=
 begin
   rcases ne_or_eq r 0 with h|rfl,
@@ -306,6 +327,62 @@ begin
   { exact add_haar_sphere_of_ne_zero μ x h }
 end
 
+lemma glouglou (f : local_homeomorph E E) (f' : E → (E ≃L[ℝ] E))
+  (h : ∀ x ∈ f.source, has_fderiv_at f (f' x : E →L[ℝ] E) x)
+  (y : E) (y_mem : y ∈ f.target) :
+  tendsto (λ r, μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r))
+    (𝓝[Ioi (0 : ℝ)] 0) (𝓝 (ennreal.of_real (linear_map.det (f' (f.symm y) : E →ₗ[ℝ] E)))) :=
+begin
+  let d := ennreal.of_real (linear_map.det (f' (f.symm y) : E →ₗ[ℝ] E)),
+  let x := f.symm y,
+  have x_mem : x ∈ f.source := sorry,
+  have t : ℝ := sorry,
+  have ht : t ∈ Ico (0 : ℝ) 1 := sorry,
+  have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+    ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d * μ (closed_ball 0 1)
+      ≤ μ (f ⁻¹' (closed_ball y r)),
+  { let x := f.symm y,
+    have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' x ⁻¹' (closed_ball 0 1)
+      ⊆ f ⁻¹' ({f x} + r • closed_ball 0 1),
+    { apply eventually_smul_preimage_fderiv_subset_preimage,
+      { exact h x x_mem },
+      { apply convex_closed_ball },
+      { apply closed_ball_mem_nhds _ zero_lt_one },
+      { apply bounded_closed_ball },
+      { exact ht } },
+    filter_upwards [this, self_mem_nhds_within],
+    assume r hr r_pos,
+    replace r_pos : 0 < r := r_pos,
+    calc
+    ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d * μ (closed_ball 0 1)
+
+    = μ ({x} + r • t • ⇑(f' x) ⁻¹' closed_ball 0 1) : begin
+      simp only [abs_of_nonneg, r_pos.le, ht.left, add_haar_smul, image_add_left, pow_nonneg,
+        add_haar_preimage_add, singleton_add],
+
+
+    end
+    ... ≤ μ (f ⁻¹' ({f x} + r • closed_ball 0 1)) : measure_mono hr
+    ... = μ (f ⁻¹' closed_ball y r) :
+      by simp only [y_mem, smul_closed_ball, zero_le_one, real.norm_eq_abs, abs_of_nonneg r_pos.le,
+        mul_one, preimage_add_closed_ball, image_add_left, local_homeomorph.right_inv, zero_add,
+        singleton_add, smul_zero, sub_neg_eq_add]
+
+  }
+
+end
+
+
+
+
 end measure
 
 end measure_theory
+
+#exit
+
+lemma eventually_smul_preimage_fderiv_subset_preimage
+  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
+  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
+  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=

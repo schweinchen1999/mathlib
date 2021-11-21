@@ -296,14 +296,14 @@ lemma bounded_iff_forall_norm_le {s : set E} : bounded s ↔ ∃ C, ∀ x ∈ s,
 by simpa only [set.subset_def, mem_closed_ball_iff_norm, sub_zero]
   using bounded_iff_subset_ball (0 : E)
 
-lemma preimage_add_ball (x y : E) (r : ℝ) : ((+) y) ⁻¹' (ball x r) = ball (x - y) r :=
+@[simp] lemma preimage_add_ball (x y : E) (r : ℝ) : ((+) y) ⁻¹' (ball x r) = ball (x - y) r :=
 begin
   ext z,
   simp only [dist_eq_norm, set.mem_preimage, mem_ball],
   abel
 end
 
-lemma preimage_add_closed_ball (x y : E) (r : ℝ) :
+@[simp] lemma preimage_add_closed_ball (x y : E) (r : ℝ) :
   ((+) y) ⁻¹' (closed_ball x r) = closed_ball (x - y) r :=
 begin
   ext z,
