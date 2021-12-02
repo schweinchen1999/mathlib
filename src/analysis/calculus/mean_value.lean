@@ -1357,6 +1357,66 @@ begin
   ... = ε * r : by { field_simp [Rpos.ne'], ring }
 end
 
+
+/-- If `s` is a bounded set, then for small enough `r`, the set `{x} + r • s` is contained in any
+fixed neighborhood of `x`. -/
+lemma eventually_singleton_add_smul_subset
+  {x : E} {s : set E} (hs : bounded s) {u : set E} (hu : u ∈ 𝓝 x) :
+  ∀ᶠ r in 𝓝 (0 : ℝ), {x} + r • s ⊆ u :=
+begin
+  obtain ⟨ε, εpos, hε⟩ : ∃ ε (hε : 0 < ε), closed_ball x ε ⊆ u :=
+    nhds_basis_closed_ball.mem_iff.1 hu,
+  obtain ⟨R, Rpos, hR⟩ : ∃ (R : ℝ), 0 < R ∧ s ⊆ closed_ball 0 R := hs.subset_ball_lt 0 0,
+  have : metric.closed_ball (0 : ℝ) (ε / R) ∈ 𝓝 (0 : ℝ) :=
+    closed_ball_mem_nhds _ (div_pos εpos Rpos),
+  filter_upwards [this],
+  assume r hr,
+  simp only [image_add_left, singleton_add],
+  assume y hy,
+  obtain ⟨z, zs, hz⟩ : ∃ (z : E), z ∈ s ∧ r • z = -x + y, by simpa [mem_smul_set] using hy,
+  have I : ∥r • z∥ ≤ ε := calc
+    ∥r • z∥ = ∥r∥ * ∥z∥ : norm_smul _ _
+    ... ≤ (ε / R) * R :
+      mul_le_mul (mem_closed_ball_zero_iff.1 hr)
+        (mem_closed_ball_zero_iff.1 (hR zs)) (norm_nonneg _) (div_pos εpos Rpos).le
+    ... = ε : by field_simp [Rpos.ne'],
+  have : y = x + r • z, by simp only [hz, add_neg_cancel_left],
+  apply hε,
+  simpa only [this, dist_eq_norm, add_sub_cancel', mem_closed_ball] using I,
+end
+
+lemma metric.bounded.smul {E : Type*} [normed_group E] {𝕜 : Type*} [normed_field 𝕜] [normed_space 𝕜 E]
+  {s : set E} (hs : bounded s) (c : 𝕜) :
+  bounded (c • s) :=
+begin
+  obtain ⟨R, Rpos, hR⟩ : ∃ (R : ℝ), 0 < R ∧ s ⊆ closed_ball 0 R := hs.subset_ball_lt 0 0,
+  refine (bounded_iff_subset_ball 0).2 ⟨∥c∥ * R, _⟩,
+  assume z hz,
+  obtain ⟨y, ys, rfl⟩ : ∃ (y : E), y ∈ s ∧ c • y = z := mem_smul_set.1 hz,
+  simp only [mem_closed_ball_zero_iff],
+  calc ∥c • y∥ = ∥c∥ * ∥y∥ : norm_smul _ _
+  ... ≤ ∥c∥ * R : mul_le_mul_of_nonneg_left (mem_closed_ball_zero_iff.1 (hR ys)) (norm_nonneg _)
+end
+
+/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
+`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
+Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the
+intersection of the former with an arbitrary neighborhood of `x`, for small enough `r`. -/
+lemma eventually_smul_preimage_fderiv_subset_inter_preimage
+  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
+  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
+  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) {u : set E} (hu : u ∈ 𝓝 x) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u ∩ f ⁻¹' ({f x} + r • s) :=
+begin
+  have A : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=
+    eventually_smul_preimage_fderiv_subset_preimage hf s_conv hs h's ht,
+  have B : ∀ᶠ r in 𝓝 (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u :=
+    eventually_singleton_add_smul_subset ((f'.antilipschitz.bounded_preimage h's).smul _) hu,
+  filter_upwards [A, nhds_within_le_nhds B],
+  assume r hr h'r,
+  exact subset_inter h'r hr
+end
+
 /-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
 `f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
 Here we prove that the rescaling of the former by a fixed factor `t < 1` is contained in the latter,
@@ -1371,6 +1431,38 @@ begin
   have h'f : has_fderiv_at f.symm (f'.symm : F →L[ℝ] E) (f x) := f.has_fderiv_at_symm' hx hf,
   let s' := f' ⁻¹' s,
   have s'_conv : convex ℝ s' := s_conv.linear_preimage f',
+  have hs' : s' ∈ 𝓝 (0 : E),
+  { apply f'.continuous.continuous_at,
+    simpa only [continuous_linear_equiv.map_zero] using hs },
+  have h's' : bounded s' := f'.antilipschitz.bounded_preimage h's,
+  filter_upwards [eventually_smul_preimage_fderiv_subset_preimage h'f s'_conv hs' h's' ht],
+  assume r hr,
+  simp only [f'.symm_preimage_preimage, s', hx, local_homeomorph.left_inv] at hr,
+  calc f.source ∩ f ⁻¹' ({f x} + r • t • s)
+    ⊆ f.source ∩ f ⁻¹' ((f.symm) ⁻¹' ({x} + r • ⇑f' ⁻¹' s)) :
+      inter_subset_inter_right _ (preimage_mono hr)
+    ... = f.source ∩ ({x} + r • ⇑f' ⁻¹' s) : f.source_inter_preimage_inv_preimage _
+    ... ⊆ {x} + r • ⇑f' ⁻¹' s : inter_subset_right _ _
+end
+
+/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
+`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
+Here we prove that the rescaling of the former by a fixed factor `t < 1` is contained in the latter,
+for small enough `r`, if `f` is a local homeomorphism. -/
+lemma eventually_preimage_smul_subset_preimage_fderiv'
+  {f : local_homeomorph E F} {x : E} {f' : E ≃L[ℝ] F}
+  (hx : x ∈ f.source) (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
+  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
+  {t : ℝ} (ht : 1 < t) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f.source ∩ f ⁻¹' ({f x} + r • s) ⊆ {x} + r • t • f' ⁻¹' (s) :=
+begin
+  have h'f : has_fderiv_at f.symm (f'.symm : F →L[ℝ] E) (f x) := f.has_fderiv_at_symm' hx hf,
+  let s' := t • f' ⁻¹' s,
+  have s'_conv : convex ℝ s', by { apply convex.smul, exact s_conv.linear_preimage f' },
+
+end
+
+#exit
   have hs' : s' ∈ 𝓝 (0 : E),
   { apply f'.continuous.continuous_at,
     simpa only [continuous_linear_equiv.map_zero] using hs },

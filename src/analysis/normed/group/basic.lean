@@ -262,6 +262,9 @@ lemma mem_closed_ball_iff_norm {g h : E} {r : ℝ} :
   h ∈ closed_ball g r ↔ ∥h - g∥ ≤ r :=
 by rw [mem_closed_ball, dist_eq_norm]
 
+@[simp] lemma mem_closed_ball_zero_iff {ε : ℝ} {x : E} : x ∈ closed_ball (0 : E) ε ↔ ∥x∥ ≤ ε :=
+by rw [mem_closed_ball, dist_zero_right]
+
 lemma add_mem_closed_ball_iff_norm {g h : E} {r : ℝ} :
   g + h ∈ closed_ball g r ↔ ∥h∥ ≤ r :=
 by rw [mem_closed_ball_iff_norm, add_sub_cancel']
