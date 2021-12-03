@@ -365,7 +365,7 @@ begin
         singleton_add, smul_zero, sub_neg_eq_add] },
   have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
     ennreal.of_real (t ^ finrank ℝ E) * μ (f.source ∩ f ⁻¹' (closed_ball y r))
-    ≤ ennreal.of_real (r ^ finrank ℝ E) * d * μ (closed_ball 0 1),
+      ≤ ennreal.of_real (r ^ finrank ℝ E) * d * μ (closed_ball 0 1),
   {
 
   }

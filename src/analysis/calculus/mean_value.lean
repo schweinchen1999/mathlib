@@ -1398,6 +1398,59 @@ begin
   ... ≤ ∥c∥ * R : mul_le_mul_of_nonneg_left (mem_closed_ball_zero_iff.1 (hR ys)) (norm_nonneg _)
 end
 
+lemma linear_map.preimage_smul_set {E : Type*} [add_comm_group E] {F : Type*} [add_comm_group F]
+  {𝕜 : Type*} [field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E →ₗ[𝕜] F) {c : 𝕜} (hc : c ≠ 0) (s : set F) :
+  f ⁻¹' (c • s) = c • f ⁻¹' s :=
+begin
+  apply subset.antisymm,
+  { rintros x ⟨y, ys, hy⟩,
+    refine ⟨c⁻¹ • x, _, _⟩,
+    { simp only [←hy, smul_smul, inv_mul_cancel hc, ys, ring_hom.id_apply, one_smul, mem_preimage,
+        linear_map.map_smulₛₗ] },
+    { simp only [smul_smul, mul_inv_cancel hc, one_smul] } },
+  { rintros x ⟨y, hy, rfl⟩,
+    refine ⟨f y, hy, by simp only [ring_hom.id_apply, linear_map.map_smulₛₗ]⟩ }
+end
+
+
+lemma linear_equiv.preimage_smul_set {E : Type*} [add_comm_group E] {F : Type*} [add_comm_group F]
+  {𝕜 : Type*} [field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E ≃ₗ[𝕜] F) (c : 𝕜) (s : set F) :
+  f ⁻¹' (c • s) = c • f ⁻¹' s :=
+begin
+  rcases eq_empty_or_nonempty s with rfl|hs,
+  { simp only [preimage_empty, smul_set_empty] },
+  rcases eq_or_ne c 0 with rfl|hc,
+  { simp only [zero_smul_set hs, zero_smul_set (hs.preimage f.surjective)],
+    ext x,
+    simp only [linear_equiv.map_eq_zero_iff, mem_preimage, set.mem_zero] },
+  { exact linear_map.preimage_smul_set (f : E →ₗ[𝕜] F) hc s }
+end
+
+lemma continuous_linear_equiv.preimage_smul_set {E : Type*} [normed_group E] {F : Type*} [normed_group F]
+  {𝕜 : Type*} [normed_field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E ≃L[𝕜] F) (c : 𝕜) (s : set F) :
+  f ⁻¹' (c • s) = c • f ⁻¹' s :=
+linear_equiv.preimage_smul_set _ c s
+
+lemma set_smul_mem_nhds_zero {E : Type*} [normed_group E] {𝕜 : Type*} [normed_field 𝕜] [normed_space 𝕜 E]
+  {s : set E} (hs : s ∈ 𝓝 (0 : E)) {c : 𝕜} (hc : c ≠ 0) :
+  c • s ∈ 𝓝 (0 : E) :=
+begin
+  obtain ⟨ε, εpos, hε⟩ : ∃ (ε : ℝ) (H : 0 < ε), ball 0 ε ⊆ s := metric.mem_nhds_iff.1 hs,
+  have : c • ball (0 : E) ε ∈ 𝓝 (0 : E),
+  { rw [smul_ball hc, smul_zero],
+    exact ball_mem_nhds _ (mul_pos (by simpa using hc) εpos) },
+  exact filter.mem_of_superset this ((set_smul_subset_set_smul_iff₀ hc).2 hε)
+end
+
+lemma set_smul_mem_nhds_zero_iff {E : Type*} [normed_group E] {𝕜 : Type*} [normed_field 𝕜] [normed_space 𝕜 E]
+  (s : set E) {c : 𝕜} (hc : c ≠ 0) :
+  c • s ∈ 𝓝 (0 : E) ↔ s ∈ 𝓝(0 : E) :=
+begin
+  refine ⟨λ h, _, λ h, set_smul_mem_nhds_zero h hc⟩,
+  convert set_smul_mem_nhds_zero h (inv_ne_zero hc),
+  rw [smul_smul, inv_mul_cancel hc, one_smul],
+end
+
 /-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
 `f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
 Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the
@@ -1425,54 +1478,26 @@ lemma eventually_preimage_smul_subset_preimage_fderiv
   {f : local_homeomorph E F} {x : E} {f' : E ≃L[ℝ] F}
   (hx : x ∈ f.source) (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
   {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
-  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f.source ∩ f ⁻¹' ({f x} + r • t • s) ⊆ {x} + r • f' ⁻¹' (s) :=
-begin
-  have h'f : has_fderiv_at f.symm (f'.symm : F →L[ℝ] E) (f x) := f.has_fderiv_at_symm' hx hf,
-  let s' := f' ⁻¹' s,
-  have s'_conv : convex ℝ s' := s_conv.linear_preimage f',
-  have hs' : s' ∈ 𝓝 (0 : E),
-  { apply f'.continuous.continuous_at,
-    simpa only [continuous_linear_equiv.map_zero] using hs },
-  have h's' : bounded s' := f'.antilipschitz.bounded_preimage h's,
-  filter_upwards [eventually_smul_preimage_fderiv_subset_preimage h'f s'_conv hs' h's' ht],
-  assume r hr,
-  simp only [f'.symm_preimage_preimage, s', hx, local_homeomorph.left_inv] at hr,
-  calc f.source ∩ f ⁻¹' ({f x} + r • t • s)
-    ⊆ f.source ∩ f ⁻¹' ((f.symm) ⁻¹' ({x} + r • ⇑f' ⁻¹' s)) :
-      inter_subset_inter_right _ (preimage_mono hr)
-    ... = f.source ∩ ({x} + r • ⇑f' ⁻¹' s) : f.source_inter_preimage_inv_preimage _
-    ... ⊆ {x} + r • ⇑f' ⁻¹' s : inter_subset_right _ _
-end
-
-/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
-`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
-Here we prove that the rescaling of the former by a fixed factor `t < 1` is contained in the latter,
-for small enough `r`, if `f` is a local homeomorphism. -/
-lemma eventually_preimage_smul_subset_preimage_fderiv'
-  {f : local_homeomorph E F} {x : E} {f' : E ≃L[ℝ] F}
-  (hx : x ∈ f.source) (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
-  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
   {t : ℝ} (ht : 1 < t) :
   ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f.source ∩ f ⁻¹' ({f x} + r • s) ⊆ {x} + r • t • f' ⁻¹' (s) :=
 begin
+  have htinv : t⁻¹ ∈ Ico (0 : ℝ) 1 := ⟨inv_nonneg.2 (zero_lt_one.trans ht).le, inv_lt_one ht⟩,
   have h'f : has_fderiv_at f.symm (f'.symm : F →L[ℝ] E) (f x) := f.has_fderiv_at_symm' hx hf,
   let s' := t • f' ⁻¹' s,
   have s'_conv : convex ℝ s', by { apply convex.smul, exact s_conv.linear_preimage f' },
-
-end
-
-#exit
   have hs' : s' ∈ 𝓝 (0 : E),
-  { apply f'.continuous.continuous_at,
+  { rw set_smul_mem_nhds_zero_iff _ (zero_lt_one.trans ht).ne',
+    apply f'.continuous.continuous_at,
     simpa only [continuous_linear_equiv.map_zero] using hs },
-  have h's' : bounded s' := f'.antilipschitz.bounded_preimage h's,
-  filter_upwards [eventually_smul_preimage_fderiv_subset_preimage h'f s'_conv hs' h's' ht],
+  have h's' : bounded s' := (f'.antilipschitz.bounded_preimage h's).smul _,
+  filter_upwards [eventually_smul_preimage_fderiv_subset_preimage h'f s'_conv hs' h's' htinv],
   assume r hr,
-  simp only [f'.symm_preimage_preimage, s', hx, local_homeomorph.left_inv] at hr,
-  calc f.source ∩ f ⁻¹' ({f x} + r • t • s)
-    ⊆ f.source ∩ f ⁻¹' ((f.symm) ⁻¹' ({x} + r • ⇑f' ⁻¹' s)) :
+  simp only [f'.symm_preimage_preimage, s', hx, local_homeomorph.left_inv, mul_one, smul_smul,
+    continuous_linear_equiv.preimage_smul_set, inv_mul_cancel (zero_lt_one.trans ht).ne'] at hr,
+  rw [← smul_smul] at hr,
+  calc f.source ∩ f ⁻¹' ({f x} + r • s)
+    ⊆ f.source ∩ f ⁻¹' ((f.symm) ⁻¹' ({x} + r • t • ⇑f' ⁻¹' s)) :
       inter_subset_inter_right _ (preimage_mono hr)
-    ... = f.source ∩ ({x} + r • ⇑f' ⁻¹' s) : f.source_inter_preimage_inv_preimage _
-    ... ⊆ {x} + r • ⇑f' ⁻¹' s : inter_subset_right _ _
+    ... = f.source ∩ ({x} + r • t • ⇑f' ⁻¹' s) : f.source_inter_preimage_inv_preimage _
+    ... ⊆ {x} + r • t • ⇑f' ⁻¹' s : inter_subset_right _ _
 end
