@@ -1048,6 +1048,10 @@ variables [has_inv α] {a b: α}
 @[to_additive abs_le']
 lemma mabs_le' : |a| ≤ b ↔ a ≤ b ∧ a⁻¹ ≤ b := sup_le_iff
 
+@[to_additive abs_le_iff]
+lemma mabs_le_iff : |a| ≤ b ↔ a⁻¹ ≤ b ∧ a ≤ b :=
+by rw [mabs_le', and.comm]
+
 @[to_additive le_abs_self]
 lemma le_mabs_self (a : α) : a ≤ |a| := le_sup_left
 
@@ -1119,11 +1123,9 @@ end without_covariant
 section covariant_add_le
 
 section has_neg
-
 variables [has_neg α] [linear_order α] {a b: α}
 
-lemma abs_eq_max_neg : abs a = max a (-a) :=
-rfl
+lemma abs_eq_max_neg : abs a = max a (-a) := rfl
 
 lemma abs_choice (x : α) : |x| = x ∨ |x| = -x := max_choice _ _
 
@@ -1137,10 +1139,10 @@ sup_ind _ _ h1 h2
 end has_neg
 
 section add_group
+variables [add_group α]
 
 section lattice
-
-variables [add_group α] [lattice α] [covariant_class α α (+) (≤)] {a b c : α}
+variables [lattice α] [covariant_class α α (+) (≤)] {a b c : α}
 
 lemma abs_of_nonneg (h : 0 ≤ a) : |a| = a :=
 sup_eq_left.mpr $ (neg_nonpos.2 h).trans h
@@ -1154,11 +1156,13 @@ sup_eq_right.mpr $ h.trans (neg_nonneg.2 h)
 lemma abs_of_neg (h : a < 0) : |a| = -a :=
 abs_of_nonpos h.le
 
+lemma abs_le [covariant_class α α (swap (+)) (≤)] : |a| ≤ b ↔ - b ≤ a ∧ a ≤ b :=
+by rw [abs_le_iff, neg_le]
+
 end lattice
 
 section linear_order
-
-variables [add_group α] [linear_order α]
+variables [linear_order α]
 
 lemma eq_or_eq_neg_of_abs_eq {a b : α} (h : |a| = b) : a = b ∨ a = -b :=
 by simpa only [← h, eq_comm, eq_neg_iff_eq_neg] using abs_choice a
@@ -1230,30 +1234,32 @@ end linear_order
 
 end add_group
 
+section add_comm_group
+
+variables [add_comm_group α] [lattice α] [covariant_class α α (+) (≤)]
+
+/-- The **triangle inequality**. -/
+lemma abs_add (a b : α) : |a + b| ≤ |a| + |b| :=
+begin
+  refine abs_le_iff.mpr ⟨_, add_le_add (le_abs_self a) (le_abs_self b)⟩,
+  rw neg_add,
+  exact add_le_add (neg_le_abs_self a) (neg_le_abs_self b),
+end
+
+theorem abs_sub (a b : α) : |a - b| ≤ |a| + |b| :=
+by { rw [sub_eq_add_neg, ←abs_neg b], exact abs_add a _ }
+
+end add_comm_group
+
 end covariant_add_le
 
 section linear_ordered_add_comm_group
 
 variables [linear_ordered_add_comm_group α] {a b c d : α}
 
-lemma abs_le : |a| ≤ b ↔ - b ≤ a ∧ a ≤ b :=
-by rw [abs_le', and.comm, neg_le]
-
 lemma neg_le_of_abs_le (h : |a| ≤ b) : -b ≤ a := (abs_le.mp h).1
 
 lemma le_of_abs_le (h : |a| ≤ b) : a ≤ b := (abs_le.mp h).2
-
-/--
-The **triangle inequality** in `linear_ordered_add_comm_group`s.
--/
-lemma abs_add (a b : α) : |a + b| ≤ |a| + |b| :=
-abs_le.2 ⟨(neg_add (|a|) (|b|)).symm ▸
-  add_le_add (neg_le.2 $ neg_le_abs_self _) (neg_le.2 $ neg_le_abs_self _),
-  add_le_add (le_abs_self _) (le_abs_self _)⟩
-
-theorem abs_sub (a b : α) :
-  |a - b| ≤ |a| + |b| :=
-by { rw [sub_eq_add_neg, ←abs_neg b], exact abs_add a _ }
 
 lemma abs_sub_le_iff : |a - b| ≤ c ↔ a - b ≤ c ∧ b - a ≤ c :=
 by rw [abs_le, neg_le_sub_iff_le_add, sub_le_iff_le_add', and_comm, sub_le_iff_le_add']
