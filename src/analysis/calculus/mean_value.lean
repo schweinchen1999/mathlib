@@ -1357,8 +1357,6 @@ begin
   ... = ε * r : by { field_simp [Rpos.ne'], ring }
 end
 
-.
-
 @[simp] lemma singleton_add_ball {E : Type*} [normed_group E] (x y : E) (r : ℝ) :
   {x} + ball y r = ball (x + y) r :=
 by simp only [preimage_add_ball, image_add_left, singleton_add, sub_neg_eq_add, add_comm y x]
@@ -1366,95 +1364,6 @@ by simp only [preimage_add_ball, image_add_left, singleton_add, sub_neg_eq_add, 
 lemma singleton_add_ball_zero {E : Type*} [normed_group E] (x : E) (r : ℝ) :
   {x} + ball 0 r = ball x r :=
 by simp
-
-lemma eventually_image_ball_subset_image_ball_deriv
-  {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f '' (ball x r) ⊆ ball (f x) (ε * r) + f' '' (ball 0 r) :=
-begin
-  obtain ⟨R, Rpos, hR⟩ : ∃ (R : ℝ) (H : R > 0),
-    ball x R ⊆ {z : E | ∥f z - f x - f' (z - x)∥ ≤ ε * ∥z - x∥} :=
-      metric.mem_nhds_iff.1 (is_o.def hf εpos),
-  have : Ioo (0 : ℝ) R ∈ 𝓝[Ioi (0 : ℝ)] (0 : ℝ) := Ioo_mem_nhds_within_Ioi ⟨le_rfl, Rpos⟩,
-  filter_upwards [this],
-  rintros r hr y ⟨z, hz, rfl⟩,
-  refine set.mem_add.2 ⟨f z - f' (z - x), f' (z - x), _, _, by abel⟩,
-  { simp only [dist_eq_norm, mem_ball],
-    calc ∥f z - f' (z - x) - f x∥
-    = ∥f z - f x - f' (z - x)∥ : by { congr' 1, abel }
-    ... ≤ ε * ∥z - x∥ : hR (ball_subset_ball hr.2.le hz)
-    ... < ε * r : (mul_lt_mul_left εpos).2 (mem_ball_iff_norm.1 hz) },
-  { apply mem_image_of_mem,
-    simpa only [mem_ball_iff_norm, sub_zero] using hz }
-end
-
-lemma eventually_image_ball_subset_image_ball_deriv'
-  {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-    r⁻¹ • ({-f x } + f '' (ball x r)) ⊆ ball 0 ε + f' '' (ball 0 1) :=
-begin
-  filter_upwards [eventually_image_ball_subset_image_ball_deriv hf εpos, self_mem_nhds_within],
-  assume r hr rpos,
-  calc r⁻¹ • ({-f x} + f '' ball x r)
-  ⊆ r⁻¹ • ({-f x} + (ball (f x) (ε * r) + f' '' (ball 0 r))) :
-    smul_set_mono (add_subset_add subset.rfl hr)
-  ... ⊆ ball 0 ε + f' '' ball 0 1 : begin
-    rw [← add_assoc, singleton_add_ball, add_left_neg],
-    rw smul_add (r⁻¹) (ball (0 : E) ε),
-  end
-end
-
-
-#exit
-
-  obtain ⟨ε, εpos, hε⟩ : ∃ (ε : ℝ) (H : 0 < ε), t • s + closed_ball (0 : F) ε ⊆ s :=
-    s_conv.exists_smul_add_closed_ball_subset hs ht,
-  obtain ⟨R, Rpos, Rs⟩ : ∃ R, 0 < R ∧ f' ⁻¹' s ⊆ closed_ball (0 : E) R :=
-    (f'.antilipschitz.bounded_preimage h's).subset_ball_lt _ _,
-  obtain ⟨δ, δpos, hδ⟩ :
-    ∃ (δ : ℝ) (H : 0 < δ), closed_ball 0 δ ⊆ {z : E | ∥f (x + z) - f x - f' z∥ ≤ (ε / R) * ∥z∥} :=
-      nhds_basis_closed_ball.mem_iff.1
-        ((has_fderiv_at_iff_is_o_nhds_zero.1 hf).def (div_pos εpos Rpos)),
-  have : Ioc (0 : ℝ) (δ / R) ∈ 𝓝[Ioi (0 : ℝ)] 0,
-  { apply Ioc_mem_nhds_within_Ioi,
-    simp only [div_pos δpos Rpos, left_mem_Ico] },
-  filter_upwards [this],
-  rintros r ⟨rpos, rle⟩ y hy,
-  obtain ⟨z, f'z, rfl⟩ : ∃ (z : E), f' z ∈ s ∧ x + r • t • z = y,
-    by simpa only [mem_smul_set, image_add_left, exists_exists_and_eq_and, mem_preimage,
-                   singleton_add, neg_add_eq_sub, eq_sub_iff_add_eq'] using hy, clear hy,
-  have z_le : ∥z∥ ≤ R, by simpa only [mem_closed_ball, dist_zero_right] using Rs f'z,
-  simp only [image_add_left, mem_preimage, singleton_add, neg_add_eq_sub],
-  let u := f (x + (r * t) • z) - f x - f' ((r * t) • z),
-  suffices H : (r * t) • f' z + u ∈ r • s,
-  { convert H, simp only [add_sub_cancel'_right, smul_smul, u, continuous_linear_equiv.map_smul] },
-  let v := r ⁻¹ • u,
-  suffices H : t • f' z + v ∈ s,
-  { have : (r * t) • f' z + u = r • (t • f' z + v),
-      by simp only [smul_smul, mul_inv_cancel rpos.ne', smul_add, one_smul],
-    rw this,
-    exact smul_mem_smul_set H },
-  suffices H : ∥u∥ ≤ ε * r,
-  { apply hε,
-    apply set.add_mem_add (smul_mem_smul_set f'z),
-    simpa only [norm_smul, real.norm_eq_abs, abs_of_nonneg (inv_nonneg.mpr rpos.le),
-      ← div_eq_inv_mul, div_le_iff rpos, mem_closed_ball, dist_zero_right] using H },
-  have I₀ : ∥(r * t) • z∥ ≤ r * R, from calc
-    ∥(r * t) • z∥ = r * t * ∥z∥ :
-      by simp only [norm_smul, real.norm_eq_abs, abs_of_nonneg, mul_nonneg rpos.le ht.left]
-    ... ≤ r * 1 * R : by apply_rules [mul_le_mul, ht.2.le, ht.1, norm_nonneg, mul_nonneg,
-                                      zero_le_one, le_refl, rpos.le]
-    ... = r * R : by rw [mul_one],
-  have I : ∥(r * t) • z∥ ≤ δ, from calc
-    ∥(r * t) • z∥ ≤ r * R : I₀
-    ... ≤ (δ / R) * R : mul_le_mul_of_nonneg_right rle Rpos.le
-    ... = δ : by field_simp [Rpos.ne'],
-  calc ∥u∥ ≤ ε / R * ∥(r * t) • z∥ :
-    by { apply hδ, simpa only [mem_closed_ball, dist_zero_right] using I }
-  ... ≤ ε / R * (r * R) : mul_le_mul_of_nonneg_left I₀ (div_nonneg εpos.le Rpos.le)
-  ... = ε * r : by { field_simp [Rpos.ne'], ring }
-end
-
-#exit
 
 
 /-- If `s` is a bounded set, then for small enough `r`, the set `{x} + r • s` is contained in any
@@ -1497,6 +1406,17 @@ begin
   ... ≤ ∥c∥ * R : mul_le_mul_of_nonneg_left (mem_closed_ball_zero_iff.1 (hR ys)) (norm_nonneg _)
 end
 
+lemma linear_map.image_smul_set {E : Type*} [add_comm_group E] {F : Type*} [add_comm_group F]
+  {𝕜 : Type*} [field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E →ₗ[𝕜] F) (c : 𝕜) (s : set E) :
+  f '' (c • s) = c • f '' s :=
+begin
+  apply subset.antisymm,
+  { rintros x ⟨y, ⟨z, zs, rfl⟩, rfl⟩,
+    exact ⟨f z, mem_image_of_mem _ zs, (f.map_smul _ _).symm ⟩ },
+  { rintros x ⟨y, ⟨z, hz, rfl⟩, rfl⟩,
+    exact (mem_image _ _ _).2 ⟨c • z, smul_mem_smul_set hz, f.map_smul _ _⟩ }
+end
+
 lemma linear_map.preimage_smul_set {E : Type*} [add_comm_group E] {F : Type*} [add_comm_group F]
   {𝕜 : Type*} [field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E →ₗ[𝕜] F) {c : 𝕜} (hc : c ≠ 0) (s : set F) :
   f ⁻¹' (c • s) = c • f ⁻¹' s :=
@@ -1510,7 +1430,6 @@ begin
   { rintros x ⟨y, hy, rfl⟩,
     refine ⟨f y, hy, by simp only [ring_hom.id_apply, linear_map.map_smulₛₗ]⟩ }
 end
-
 
 lemma linear_equiv.preimage_smul_set {E : Type*} [add_comm_group E] {F : Type*} [add_comm_group F]
   {𝕜 : Type*} [field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E ≃ₗ[𝕜] F) (c : 𝕜) (s : set F) :
@@ -1529,6 +1448,11 @@ lemma continuous_linear_equiv.preimage_smul_set {E : Type*} [normed_group E] {F 
   {𝕜 : Type*} [normed_field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E ≃L[𝕜] F) (c : 𝕜) (s : set F) :
   f ⁻¹' (c • s) = c • f ⁻¹' s :=
 linear_equiv.preimage_smul_set _ c s
+
+lemma continuous_linear_map.image_smul_set {E : Type*} [normed_group E] {F : Type*} [normed_group F]
+  {𝕜 : Type*} [normed_field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E →L[𝕜] F) (c : 𝕜) (s : set E) :
+  f '' (c • s) = c • f '' s :=
+linear_map.image_smul_set _ c s
 
 lemma set_smul_mem_nhds_zero {E : Type*} [normed_group E] {𝕜 : Type*} [normed_field 𝕜] [normed_space 𝕜 E]
   {s : set E} (hs : s ∈ 𝓝 (0 : E)) {c : 𝕜} (hc : c ≠ 0) :
@@ -1549,6 +1473,49 @@ begin
   convert set_smul_mem_nhds_zero h (inv_ne_zero hc),
   rw [smul_smul, inv_mul_cancel hc, one_smul],
 end
+
+
+lemma eventually_image_ball_subset_image_ball_fderiv
+  {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f '' (ball x r) ⊆ ball (f x) (ε * r) + f' '' (ball 0 r) :=
+begin
+  obtain ⟨R, Rpos, hR⟩ : ∃ (R : ℝ) (H : R > 0),
+    ball x R ⊆ {z : E | ∥f z - f x - f' (z - x)∥ ≤ ε * ∥z - x∥} :=
+      metric.mem_nhds_iff.1 (is_o.def hf εpos),
+  have : Ioo (0 : ℝ) R ∈ 𝓝[Ioi (0 : ℝ)] (0 : ℝ) := Ioo_mem_nhds_within_Ioi ⟨le_rfl, Rpos⟩,
+  filter_upwards [this],
+  rintros r hr y ⟨z, hz, rfl⟩,
+  refine set.mem_add.2 ⟨f z - f' (z - x), f' (z - x), _, _, by abel⟩,
+  { simp only [dist_eq_norm, mem_ball],
+    calc ∥f z - f' (z - x) - f x∥
+    = ∥f z - f x - f' (z - x)∥ : by { congr' 1, abel }
+    ... ≤ ε * ∥z - x∥ : hR (ball_subset_ball hr.2.le hz)
+    ... < ε * r : (mul_lt_mul_left εpos).2 (mem_ball_iff_norm.1 hz) },
+  { apply mem_image_of_mem,
+    simpa only [mem_ball_iff_norm, sub_zero] using hz }
+end
+
+lemma eventually_smul_image_ball_subset_image_ball_fderiv
+  {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+    r⁻¹ • ({-f x} + f '' (ball x r)) ⊆ ball 0 ε + f' '' (ball 0 1) :=
+begin
+  filter_upwards [eventually_image_ball_subset_image_ball_fderiv hf εpos, self_mem_nhds_within],
+  assume r hr rpos,
+  replace rpos : 0 < r := rpos,
+  have A : r⁻¹ ≠ 0, by simp only [rpos.ne', inv_eq_zero, ne.def, not_false_iff],
+  have B : r⁻¹ * (ε * r) = ε, by field_simp [rpos.ne'],
+  calc r⁻¹ • ({-f x} + f '' ball x r)
+  ⊆ r⁻¹ • ({-f x} + (ball (f x) (ε * r) + f' '' (ball 0 r))) :
+    smul_set_mono (add_subset_add subset.rfl hr)
+  ... = ball 0 ε + f' '' ball 0 1 : begin
+    rw [← add_assoc, singleton_add_ball, add_left_neg, smul_add_set, ← f'.image_smul_set,
+      smul_ball A, smul_ball A],
+    simp only [real.norm_eq_abs, smul_zero, abs_of_nonneg (inv_nonneg.2 rpos.le),
+      inv_mul_cancel rpos.ne', B],
+  end
+end
+
 
 /-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
 `f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
