@@ -991,58 +991,6 @@ section covariant_add_le
 
 section has_neg
 
-/-- `abs a` is the absolute value of `a`. -/
-@[to_additive, priority 100] -- see Note [lower instance priority]
-instance has_inv_lattice_has_abs [has_inv α] [lattice α] : has_abs (α) := ⟨λ a, a ⊔ a⁻¹⟩
-
-@[to_additive, priority 100] -- see Note [lower instance priority]
-instance has_one_lattice_has_pos_part [has_one α] [lattice α] : has_pos_part (α) := ⟨λ a, a ⊔ 1⟩
-
-@[to_additive, priority 100] -- see Note [lower instance priority]
-instance has_one_lattice_has_neg_part [has_inv α] [has_one α] [lattice α] :
-  has_neg_part (α) := ⟨λ a, a⁻¹ ⊔ 1⟩
-
-section pos_part
-
-variables [has_one α] [lattice α]
-
-@[to_additive]
-lemma abs_eq_sup_inv [has_inv α] (a : α) : |a| = a ⊔ a⁻¹ := rfl
-
-@[to_additive]
-lemma pos_part_eq_sup_one (a : α) : a⁺ = a ⊔ 1 := rfl
-
-@[to_additive]
-lemma neg_part_eq_inv_sup_one [has_inv α] (a : α) : a⁻ = a⁻¹ ⊔ 1 := rfl
-
-@[to_additive, simp]
-lemma pos_part_one : (1 : α)⁺ = 1 := sup_idem
-
-@[to_additive pos_part_nonneg]
-lemma one_le_pos_part (a : α) : 1 ≤ a⁺ := le_sup_right
-
-@[to_additive neg_part_nonneg]
-lemma one_le_neg_part [has_inv α] (a : α) : 1 ≤ a⁻ := le_sup_right
-
-end pos_part
-
-section lattice
-
-variables [has_neg α] [lattice α] {a b: α}
-
-lemma abs_le' : |a| ≤ b ↔ a ≤ b ∧ -a ≤ b := sup_le_iff
-
-lemma le_abs_self (a : α) : a ≤ |a| := le_sup_left
-
-lemma neg_le_abs_self (a : α) : -a ≤ |a| := le_sup_right
-
-theorem abs_le_abs (h₀ : a ≤ b) (h₁ : -a ≤ b) : |a| ≤ |b| :=
-(abs_le'.2 ⟨h₀, h₁⟩).trans (le_abs_self b)
-
-end lattice
-
-section linear_order
-
 variables [has_neg α] [linear_order α] {a b: α}
 
 lemma abs_eq_max_neg : abs a = max a (-a) :=
@@ -1057,28 +1005,13 @@ lemma lt_abs : a < |b| ↔ a < b ∨ a < -b := lt_max_iff
 lemma abs_by_cases (P : α → Prop) {a : α} (h1 : P a) (h2 : P (-a)) : P (|a|) :=
 sup_ind _ _ h1 h2
 
-end linear_order
-
 end has_neg
 
 section add_group
 
-@[to_additive, simp]
-lemma neg_part_one [group α] [lattice α] : (1 : α)⁻ = 1 :=
-by rw [neg_part_eq_inv_sup_one, one_inv, sup_idem]
-
 section lattice
 
-variables [add_group α] [lattice α]
-
-@[simp] lemma abs_neg (a : α) : | -a| = |a| :=
-by rw [abs_eq_sup_neg, sup_comm, neg_neg, abs_eq_sup_neg]
-
-lemma abs_sub_comm (a b : α) : |a - b| = |b - a| :=
-calc  |a - b| = | - (b - a)| : congr_arg _ (neg_sub b a).symm
-          ... = |b - a|      : abs_neg (b - a)
-
-variables [covariant_class α α (+) (≤)] {a b c : α}
+variables [add_group α] [lattice α] [covariant_class α α (+) (≤)] {a b c : α}
 
 lemma abs_of_nonneg (h : 0 ≤ a) : |a| = a :=
 sup_eq_left.mpr $ (neg_nonpos.2 h).trans h
@@ -1091,9 +1024,6 @@ sup_eq_right.mpr $ h.trans (neg_nonneg.2 h)
 
 lemma abs_of_neg (h : a < 0) : |a| = -a :=
 abs_of_nonpos h.le
-
-@[simp] lemma abs_zero : |0| = (0:α) :=
-abs_of_nonneg le_rfl
 
 end lattice
 
