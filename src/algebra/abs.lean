@@ -39,13 +39,13 @@ export has_abs (abs)
 /--
 The positive part of an element admiting a decomposition into positive and negative parts.
 -/
-class has_pos_part (α : Type*) := (pos : α → α)
+class has_pos_part (α : Type*) := (pos_part : α → α)
 
 /--
 The negative part of an element admiting a decomposition into positive and negative parts.
 -/
-class has_neg_part (α : Type*) := (neg : α → α)
+class has_neg_part (α : Type*) := (neg_part : α → α)
 
 notation `|`a`|` := abs a
-postfix `⁺`:1000 := has_pos_part.pos
-postfix `⁻`:1000 := has_neg_part.neg
+postfix `⁺`:1000 := has_pos_part.pos_part
+postfix `⁻`:1000 := has_neg_part.neg_part
