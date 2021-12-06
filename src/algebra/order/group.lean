@@ -1006,8 +1006,8 @@ instance has_one_lattice_has_pos_part [has_one α] : has_pos_part (α) := ⟨λ 
 instance has_one_lattice_has_neg_part [has_inv α] [has_one α] :
   has_neg_part (α) := ⟨λ a, a⁻¹ ⊔ 1⟩
 
-@[to_additive]
-lemma abs_eq_sup_inv [has_inv α] (a : α) : |a| = a ⊔ a⁻¹ := rfl
+@[to_additive abs_eq_sup_neg]
+lemma mabs_eq_sup_inv [has_inv α] (a : α) : |a| = a ⊔ a⁻¹ := rfl
 
 section pos_part
 variables [has_one α]
@@ -1095,21 +1095,21 @@ end has_inv
 section group
 variables [group α]
 
-@[simp, to_additive]
-lemma abs_one : |(1 : α)| = 1 :=
-by rw [abs_eq_sup_inv, one_inv, sup_idem]
+@[simp, to_additive abs_zero]
+lemma mabs_one : |(1 : α)| = 1 :=
+by rw [mabs_eq_sup_inv, one_inv, sup_idem]
 
 @[simp, to_additive]
 lemma neg_part_one : (1 : α)⁻ = 1 :=
 by rw [neg_part_eq_inv_sup_one, one_inv, sup_idem]
 
-@[simp, to_additive] lemma abs_inv (a : α) : |a⁻¹| = |a| :=
-by rw [abs_eq_sup_inv, sup_comm, inv_inv, abs_eq_sup_inv]
+@[simp, to_additive abs_neg] lemma mabs_inv (a : α) : |a⁻¹| = |a| :=
+by rw [mabs_eq_sup_inv, sup_comm, inv_inv, mabs_eq_sup_inv]
 
 @[to_additive abs_sub_comm]
-lemma abs_inv_comm (a b : α) : |a / b| = |b / a| :=
+lemma mabs_inv_comm (a b : α) : |a / b| = |b / a| :=
 calc  |a / b| = |(b / a)⁻¹| : congr_arg _ (inv_div' b a).symm
-          ... = |b / a|      : abs_inv (b / a)
+          ... = |b / a|      : mabs_inv (b / a)
 
 end group
 
