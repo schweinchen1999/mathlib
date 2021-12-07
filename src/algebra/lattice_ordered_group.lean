@@ -65,25 +65,7 @@ instance linear_ordered_comm_group.to_covariant_class (α : Type u)
   [linear_ordered_comm_group α] : covariant_class α α (*) (≤) :=
 { elim := λ a b c bc, linear_ordered_comm_group.mul_le_mul_left _ _ bc a }
 
-variables {α : Type u} [lattice α] [comm_group α]
-
--- Special case of Bourbaki A.VI.9 (1)
--- c + (a ⊔ b) = (c + a) ⊔ (c + b)
-@[to_additive]
-lemma mul_sup [covariant_class α α (*) (≤)] (a b c : α) : c * (a ⊔ b) = (c * a) ⊔ (c * b) :=
-begin
-  refine le_antisymm _ (by simp),
-  rw [← mul_le_mul_iff_left (c⁻¹), ← mul_assoc, inv_mul_self, one_mul],
-  exact sup_le (by simp) (by simp),
-end
-
-@[to_additive]
-lemma mul_inf [covariant_class α α (*) (≤)] (a b c : α) : c * (a ⊓ b) = (c * a) ⊓ (c * b) :=
-begin
-  refine le_antisymm (by simp) _,
-  rw [← mul_le_mul_iff_left (c⁻¹), ← mul_assoc, inv_mul_self, one_mul],
-  exact le_inf (by simp) (by simp),
-end
+variables {α : Type u} [lattice_comm_group α]
 
 -- Special case of Bourbaki A.VI.9 (2)
 -- -(a ⊔ b)=(-a) ⊓ (-b)
@@ -108,9 +90,9 @@ by rw [← inv_inv (a⁻¹ ⊔ b⁻¹), inv_sup_eq_inv_inf_inv a⁻¹ b⁻¹, in
 -- Bourbaki A.VI.10 Prop 7
 -- a ⊓ b + (a ⊔ b) = a + b
 @[to_additive]
-lemma inf_mul_sup [covariant_class α α (*) (≤)] (a b : α) : a ⊓ b * (a ⊔ b) = a * b :=
+lemma inf_mul_sup (a b : α) : a ⊓ b * (a ⊔ b) = a * b :=
 calc a ⊓ b * (a ⊔ b) = a ⊓ b * ((a * b) * (b⁻¹ ⊔ a⁻¹)) :
-  by { rw mul_sup b⁻¹ a⁻¹ (a * b), simp, }
+  by { rw ← mul_sup_mul_left b⁻¹ a⁻¹ (a * b), simp, }
 ... = a ⊓ b * ((a * b) * (a ⊓ b)⁻¹) : by rw [inv_inf_eq_sup_inv, sup_comm]
 ... = a * b                       : by rw [mul_comm, inv_mul_cancel_right]
 
@@ -129,9 +111,6 @@ begin
   rw [neg_part_le_one_iff, inv_le_one'],
 end
 
-@[to_additive le_pos]
-lemma m_le_pos (a : α) : a ≤ a⁺ := le_sup_left
-
 -- a⁺ = (-a)⁻
 @[to_additive]
 lemma pos_eq_neg_inv (a : α) : a⁺ = (a⁻¹)⁻ := by simp [neg_part_eq_pos_part_inv]
@@ -139,7 +118,7 @@ lemma pos_eq_neg_inv (a : α) : a⁺ = (a⁻¹)⁻ := by simp [neg_part_eq_pos_p
 -- We use this in Bourbaki A.VI.12  Prop 9 a)
 -- c + (a ⊓ b) = (c + a) ⊓ (c + b)
 @[to_additive]
-lemma mul_inf_eq_mul_inf_mul [covariant_class α α (*) (≤)]
+lemma mul_inf_eq_mul_inf_mul
   (a b c : α) : c * (a ⊓ b) = (c * a) ⊓ (c * b) :=
 begin
   refine le_antisymm (by simp) _,
@@ -150,12 +129,13 @@ end
 -- Bourbaki A.VI.12  Prop 9 a)
 -- a = a⁺ - a⁻
 @[to_additive, simp]
-lemma pos_div_neg [covariant_class α α (*) (≤)] (a : α) : a⁺ / a⁻ = a :=
+lemma pos_div_neg (a : α) : a⁺ / a⁻ = a :=
 begin
   symmetry,
   rw div_eq_mul_inv,
   apply eq_mul_inv_of_mul_eq,
-  rw [neg_part_eq_inv_sup_one, mul_sup, mul_one, mul_right_inv, sup_comm, pos_part_eq_sup_one],
+  rw [neg_part_eq_inv_sup_one, ← mul_sup_mul_left, mul_one, mul_right_inv, sup_comm,
+    pos_part_eq_sup_one],
 end
 
 -- Bourbaki A.VI.12  Prop 9 a)
@@ -171,7 +151,7 @@ by rw [←mul_right_inj (a⁻)⁻¹, mul_inf_eq_mul_inf_mul, mul_one, mul_left_i
 lemma sup_eq_mul_pos_div [covariant_class α α (*) (≤)] (a b : α) : a ⊔ b = b * (a / b)⁺ :=
 calc a ⊔ b = (b * (a / b)) ⊔ (b * 1) : by rw [mul_one b, div_eq_mul_inv, mul_comm a,
   mul_inv_cancel_left]
-... = b * ((a / b) ⊔ 1) : by rw ← mul_sup (a / b) 1 b
+... = b * ((a / b) ⊔ 1) : by rw mul_sup_mul_left (a / b) 1 b
 
 -- Bourbaki A.VI.12 (with a and b swapped)
 -- a⊓b = a - (a - b)⁺
@@ -192,7 +172,7 @@ lemma m_le_iff_pos_le_neg_ge [covariant_class α α (*) (≤)] (a b : α) : a �
 begin
   split; intro h,
   { split,
-    { exact sup_le (h.trans (m_le_pos b)) (one_le_pos_part b), },
+    { exact sup_le (h.trans (m_le_pos_part b)) (one_le_pos_part b), },
     { rw ← inv_le_inv_iff at h,
       exact sup_le (h.trans (inv_le_neg_part a)) (one_le_neg_part a), } },
   { rw [← pos_div_neg a, ← pos_div_neg b],
@@ -233,7 +213,7 @@ begin
   refine le_antisymm _ _,
   { refine sup_le _ _,
     { nth_rewrite 0 ← mul_one a,
-      exact mul_le_mul' (m_le_pos a) (one_le_neg_part a) },
+      exact mul_le_mul' (m_le_pos_part a) (one_le_neg_part a) },
     { nth_rewrite 0 ← one_mul (a⁻¹),
       exact mul_le_mul' (one_le_pos_part a) (inv_le_neg_part a) } },
   { rw [← inf_mul_sup, pos_inf_neg_eq_one, one_mul, ← m_pos_abs a],
@@ -276,7 +256,7 @@ Every lattice ordered commutative group is a distributive lattice
   "Every lattice ordered commutative additive group is a distributive lattice"
 ]
 def lattice_ordered_comm_group_to_distrib_lattice (α : Type u)
-  [s: lattice α] [comm_group α] [covariant_class α α (*) (≤)] : distrib_lattice α :=
+  [s: lattice_comm_group α] : distrib_lattice α :=
 { le_sup_inf :=
   begin
     intros,

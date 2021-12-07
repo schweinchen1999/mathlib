@@ -887,6 +887,69 @@ instance order_dual.lattice_comm_group [h : lattice_comm_group α] :
   lattice_comm_group (order_dual α) :=
 { ..h, }
 
+section lattice_comm_group
+
+variables [lattice_comm_group α]
+
+@[to_additive]
+lemma inv_inf_inv (a b : α) : (a⁻¹) ⊓ (b⁻¹) = (a ⊔ b)⁻¹ :=
+begin
+  apply le_antisymm,
+  { rw [← inv_le_inv_iff, inv_inv],
+    refine sup_le _ _,
+    { rw ← inv_le_inv_iff, simp, },
+    { rw ← inv_le_inv_iff, simp, } },
+  { refine le_inf _ _,
+    { rw inv_le_inv_iff, exact le_sup_left, },
+    { rw inv_le_inv_iff, exact le_sup_right, } },
+end
+
+@[to_additive]
+lemma inv_sup_inv (a b : α) : (a⁻¹) ⊔ (b⁻¹) = (a ⊓ b)⁻¹ :=
+by rw [← inv_inv (a⁻¹ ⊔ b⁻¹), ← inv_inf_inv a⁻¹ b⁻¹, inv_inv, inv_inv]
+
+@[to_additive]
+lemma mul_sup_mul_left (a b c : α) : (c * a) ⊔ (c * b) = c * (a ⊔ b) :=
+begin
+  refine le_antisymm (by simp) _,
+  rw [← mul_le_mul_iff_left (c⁻¹), ← mul_assoc, inv_mul_self, one_mul],
+  exact sup_le (by simp) (by simp),
+end
+
+@[to_additive]
+lemma mul_sup_mul_right (a b c : α) : (a * c) ⊔ (b * c) = (a ⊔ b) * c :=
+by { repeat { rw mul_comm _ c}, exact mul_sup_mul_left a b c, }
+
+@[to_additive]
+lemma mul_inf_mul_left (a b c : α) : (c * a) ⊓ (c * b) = c * (a ⊓ b) :=
+begin
+  refine le_antisymm _ (by simp),
+  rw [← mul_le_mul_iff_left (c⁻¹), ← mul_assoc, inv_mul_self, one_mul],
+  exact le_inf (by simp) (by simp),
+end
+
+@[to_additive]
+lemma mul_inf_mul_right (a b c : α) : (a * c) ⊓ (b * c) = (a ⊓ b) * c :=
+by { repeat { rw mul_comm _ c}, exact mul_inf_mul_left a b c, }
+
+@[to_additive]
+lemma div_inf_div_right (a b c : α) : (a / c) ⊓ (b / c) = (a ⊓ b) / c :=
+by simpa only [div_eq_mul_inv] using mul_inf_mul_right a b (c⁻¹)
+
+@[to_additive]
+lemma div_sup_div_right (a b c : α) : (a / c) ⊔ (b / c) = (a ⊔ b) / c :=
+by simpa only [div_eq_mul_inv] using mul_sup_mul_right a b (c⁻¹)
+
+@[to_additive]
+lemma div_inf_div_left (a b c : α) : (a / b) ⊓ (a / c) = a / (b ⊔ c) :=
+by simp only [div_eq_mul_inv, mul_inf_mul_left, inv_inf_inv]
+
+@[to_additive]
+lemma div_sup_div_left (a b c : α) : (a / b) ⊔ (a / c) = a / (b ⊓ c) :=
+by simp only [div_eq_mul_inv, mul_sup_mul_left, inv_sup_inv]
+
+end lattice_comm_group
+
 /-!
 ### Linearly ordered commutative groups
 -/
@@ -950,28 +1013,22 @@ lemma linear_ordered_comm_group.mul_lt_mul_left'
 mul_lt_mul_left' h c
 
 @[to_additive min_neg_neg]
-lemma min_inv_inv' (a b : α) : min (a⁻¹) (b⁻¹) = (max a b)⁻¹ :=
-eq.symm $ @monotone.map_max α (order_dual α) _ _ has_inv.inv a b $ λ a b, inv_le_inv_iff.mpr
+lemma min_inv_inv' (a b : α) : min (a⁻¹) (b⁻¹) = (max a b)⁻¹ := inv_inf_inv a b
 
 @[to_additive max_neg_neg]
-lemma max_inv_inv' (a b : α) : max (a⁻¹) (b⁻¹) = (min a b)⁻¹ :=
-eq.symm $ @monotone.map_min α (order_dual α) _ _ has_inv.inv a b $ λ a b, inv_le_inv_iff.mpr
+lemma max_inv_inv' (a b : α) : max (a⁻¹) (b⁻¹) = (min a b)⁻¹ := inv_sup_inv a b
 
 @[to_additive min_sub_sub_right]
-lemma min_div_div_right' (a b c : α) : min (a / c) (b / c) = min a b / c :=
-by simpa only [div_eq_mul_inv] using min_mul_mul_right a b (c⁻¹)
+lemma min_div_div_right' (a b c : α) : min (a / c) (b / c) = min a b / c := div_inf_div_right a b c
 
 @[to_additive max_sub_sub_right]
-lemma max_div_div_right' (a b c : α) : max (a / c) (b / c) = max a b / c :=
-by simpa only [div_eq_mul_inv] using max_mul_mul_right a b (c⁻¹)
+lemma max_div_div_right' (a b c : α) : max (a / c) (b / c) = max a b / c := div_sup_div_right a b c
 
 @[to_additive min_sub_sub_left]
-lemma min_div_div_left' (a b c : α) : min (a / b) (a / c) = a / max b c :=
-by simp only [div_eq_mul_inv, min_mul_mul_left, min_inv_inv']
+lemma min_div_div_left' (a b c : α) : min (a / b) (a / c) = a / max b c := div_inf_div_left a b c
 
 @[to_additive max_sub_sub_left]
-lemma max_div_div_left' (a b c : α) : max (a / b) (a / c) = a / min b c :=
-by simp only [div_eq_mul_inv, max_mul_mul_left, max_inv_inv']
+lemma max_div_div_left' (a b c : α) : max (a / b) (a / c) = a / min b c := div_sup_div_left a b c
 
 @[to_additive eq_zero_of_neg_eq]
 lemma eq_one_of_inv_eq' (h : a⁻¹ = a) : a = 1 :=
@@ -1161,6 +1218,19 @@ lemma abs_by_cases (P : α → Prop) {a : α} (h1 : P a) (h2 : P (-a)) : P (|a|)
 sup_ind _ _ h1 h2
 
 end has_neg
+
+
+@[to_additive]
+lemma neg_part_eq_one_iff [group α] [lattice α] [covariant_class α α (*) (≤)] {a : α} :
+  a⁻ = 1 ↔ 1 ≤ a :=
+by { rw neg_part_eq_one_iff', exact inv_le_one', }
+
+@[to_additive] -- neg_part_of_nonneg
+lemma neg_part_of_one_le  [group α] [lattice α] [covariant_class α α (*) (≤)]
+  (a : α) (h : 1 ≤ a) :
+  a⁻ = 1 :=
+neg_part_eq_one_iff.mpr h
+
 
 section add_group
 variables [add_group α]
