@@ -49,6 +49,10 @@ class normed_lattice_add_comm_group (α : Type*)
 lemma solid {α : Type*} [normed_lattice_add_comm_group α] {a b : α} (h : |a| ≤ |b|) : ∥a∥ ≤ ∥b∥ :=
 normed_lattice_add_comm_group.solid a b h
 
+instance normed_lattice_add_comm_group.to_normed_group {α : Type*}
+  [h : normed_lattice_add_comm_group α] : normed_group α :=
+{ dist_eq := h.dist_eq, }
+
 noncomputable instance : normed_lattice_add_comm_group ℝ :=
 { dist_eq := λ _ _, rfl,
   solid := λ _ _, id, }
@@ -68,16 +72,11 @@ instance {α : Type*} : Π [normed_group α], normed_group (order_dual α) := id
 variables {α : Type*} [normed_lattice_add_comm_group α]
 open lattice_ordered_comm_group
 
-lemma dual_solid (a b : α) (h: b⊓-b ≤ a⊓-a) : ∥a∥ ≤ ∥b∥ :=
+lemma dual_solid (a b : α) (h : b⊓-b ≤ a⊓-a) : ∥a∥ ≤ ∥b∥ :=
 begin
-  apply solid,
-  nth_rewrite 0 ← neg_neg a,
-  rw abs_eq_sup_neg,
-  rw ← neg_inf_eq_sup_neg,
-  rw abs_eq_sup_neg,
-  nth_rewrite 0 ← neg_neg b,
-  rw ← neg_inf_eq_sup_neg,
-  finish,
+  have h₂ := neg_le_neg h,
+  rw [neg_inf_eq_sup_neg, neg_inf_eq_sup_neg, neg_neg, neg_neg, sup_comm, @sup_comm _ _ _ b] at h₂,
+  exact solid h₂,
 end
 
 /--
