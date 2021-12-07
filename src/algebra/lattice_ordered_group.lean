@@ -116,95 +116,25 @@ calc a ⊓ b * (a ⊔ b) = a ⊓ b * ((a * b) * (b⁻¹ ⊔ a⁻¹)) :
 
 namespace lattice_ordered_comm_group
 
-/--
-Let `α` be a lattice ordered commutative group with identity `1`. For an element `a` of type `α`,
-the element `a ⊔ 1` is said to be the *positive component* of `a`, denoted `a⁺`.
--/
-@[to_additive /-"
-Let `α` be a lattice ordered commutative group with identity `0`. For an element `a` of type `α`,
-the element `a ⊔ 0` is said to be the *positive component* of `a`, denoted `a⁺`.
-"-/,
-priority 100] -- see Note [lower instance priority]
-instance has_one_lattice_has_pos_part : has_pos_part (α) := ⟨λ a, a ⊔ 1⟩
-
-@[to_additive pos_part_def]
-lemma m_pos_part_def (a : α) : a⁺ = a ⊔ 1 := rfl
-
-/--
-Let `α` be a lattice ordered commutative group with identity `1`. For an element `a` of type `α`,
-the element `(-a) ⊔ 1` is said to be the *negative component* of `a`, denoted `a⁻`.
--/
-@[to_additive /-"
-Let `α` be a lattice ordered commutative group with identity `0`. For an element `a` of type `α`,
-the element `(-a) ⊔ 0` is said to be the *negative component* of `a`, denoted `a⁻`.
-"-/,
-priority 100] -- see Note [lower instance priority]
-instance has_one_lattice_has_neg_part : has_neg_part (α) := ⟨λ a, a⁻¹ ⊔ 1⟩
-
-@[to_additive neg_part_def]
-lemma m_neg_part_def (a : α) : a⁻ = a⁻¹ ⊔ 1 := rfl
-
-@[to_additive, simp]
-lemma pos_one : (1 : α)⁺ = 1 := sup_idem
-
-@[to_additive, simp]
-lemma neg_one : (1 : α)⁻ = 1 := by rw [m_neg_part_def, one_inv, sup_idem]
-
 -- a⁻ = -(a ⊓ 0)
 @[to_additive]
 lemma neg_eq_inv_inf_one [covariant_class α α (*) (≤)] (a : α) : a⁻ = (a ⊓ 1)⁻¹ :=
-by rw [m_neg_part_def, ← inv_inj, inv_sup_eq_inv_inf_inv, inv_inv, inv_inv, one_inv]
-
-@[to_additive le_abs]
-lemma le_mabs (a : α) : a ≤ |a| := le_sup_left
-
-@[to_additive]
--- -a ≤ |a|
-lemma inv_le_abs (a : α) : a⁻¹ ≤ |a| := le_sup_right
-
--- 0 ≤ a⁺
-@[to_additive pos_nonneg]
-lemma one_le_pos (a : α) : 1 ≤ a⁺ := le_sup_right
-
--- 0 ≤ a⁻
-@[to_additive neg_nonneg]
-lemma one_le_neg (a : α) : 1 ≤ a⁻ := le_sup_right
-
-@[to_additive] -- pos_nonpos_iff
-lemma pos_le_one_iff {a : α} : a⁺ ≤ 1 ↔ a ≤ 1 :=
-by { rw [m_pos_part_def, sup_le_iff], simp, }
-
-@[to_additive] -- neg_nonpos_iff
-lemma neg_le_one_iff {a : α} : a⁻ ≤ 1 ↔ a⁻¹ ≤ 1 :=
-by { rw [m_neg_part_def, sup_le_iff], simp, }
-
-@[to_additive]
-lemma pos_eq_one_iff {a : α} : a⁺ = 1 ↔ a ≤ 1 :=
-by { rw le_antisymm_iff, simp only [one_le_pos, and_true], exact pos_le_one_iff, }
-
-@[to_additive]
-lemma neg_eq_one_iff' {a : α} : a⁻ = 1 ↔ a⁻¹ ≤ 1 :=
-by { rw le_antisymm_iff, simp only [one_le_neg, and_true], rw neg_le_one_iff, }
+by rw [neg_part_eq_inv_sup_one, ← inv_inj, inv_sup_eq_inv_inf_inv, inv_inv, inv_inv, one_inv]
 
 @[to_additive]
 lemma neg_eq_one_iff [covariant_class α α has_mul.mul has_le.le] {a : α} : a⁻ = 1 ↔ 1 ≤ a :=
-by { rw le_antisymm_iff, simp only [one_le_neg, and_true], rw [neg_le_one_iff, inv_le_one'], }
+begin
+  rw le_antisymm_iff,
+  simp only [one_le_neg_part, and_true],
+  rw [neg_part_le_one_iff, inv_le_one'],
+end
 
 @[to_additive le_pos]
 lemma m_le_pos (a : α) : a ≤ a⁺ := le_sup_left
 
--- -a ≤ a⁻
-@[to_additive]
-lemma inv_le_neg (a : α) : a⁻¹ ≤ a⁻ := le_sup_left
-
--- Bourbaki A.VI.12
---  a⁻ = (-a)⁺
-@[to_additive]
-lemma neg_eq_pos_inv (a : α) : a⁻ = (a⁻¹)⁺ := rfl
-
 -- a⁺ = (-a)⁻
 @[to_additive]
-lemma pos_eq_neg_inv (a : α) : a⁺ = (a⁻¹)⁻ := by simp [neg_eq_pos_inv]
+lemma pos_eq_neg_inv (a : α) : a⁺ = (a⁻¹)⁻ := by simp [neg_part_eq_pos_part_inv]
 
 -- We use this in Bourbaki A.VI.12  Prop 9 a)
 -- c + (a ⊓ b) = (c + a) ⊓ (c + b)
@@ -225,7 +155,7 @@ begin
   symmetry,
   rw div_eq_mul_inv,
   apply eq_mul_inv_of_mul_eq,
-  rw [m_neg_part_def, mul_sup, mul_one, mul_right_inv, sup_comm, m_pos_part_def],
+  rw [neg_part_eq_inv_sup_one, mul_sup, mul_one, mul_right_inv, sup_comm, pos_part_eq_sup_one],
 end
 
 -- Bourbaki A.VI.12  Prop 9 a)
@@ -262,9 +192,9 @@ lemma m_le_iff_pos_le_neg_ge [covariant_class α α (*) (≤)] (a b : α) : a �
 begin
   split; intro h,
   { split,
-    { exact sup_le (h.trans (m_le_pos b)) (one_le_pos b), },
+    { exact sup_le (h.trans (m_le_pos b)) (one_le_pos_part b), },
     { rw ← inv_le_inv_iff at h,
-      exact sup_le (h.trans (inv_le_neg a)) (one_le_neg a), } },
+      exact sup_le (h.trans (inv_le_neg_part a)) (one_le_neg_part a), } },
   { rw [← pos_div_neg a, ← pos_div_neg b],
     exact div_le_div'' h.1 h.2, }
 end
@@ -276,9 +206,9 @@ begin
   { rw ← pos_inf_neg_eq_one a,
     apply le_inf,
     { rw pos_eq_neg_inv,
-      exact ((m_le_iff_pos_le_neg_ge _ _).mp (inv_le_abs a)).right, },
-    { exact and.right (iff.elim_left (m_le_iff_pos_le_neg_ge _ _) (le_mabs a)), } },
-  { exact one_le_neg _, }
+      exact ((m_le_iff_pos_le_neg_ge _ _).mp (inv_le_mabs_self a)).right, },
+    { exact and.right (iff.elim_left (m_le_iff_pos_le_neg_ge _ _) (le_mabs_self a)), } },
+  { exact one_le_neg_part _, }
 end
 
 @[to_additive pos_abs]
@@ -293,7 +223,7 @@ end
 
 @[to_additive abs_nonneg]
 lemma one_le_abs [covariant_class α α (*) (≤)] (a : α) : 1 ≤ |a| :=
-by { rw ← m_pos_abs, exact one_le_pos _, }
+by { rw ← m_pos_abs, exact one_le_pos_part _, }
 
 -- The proof from Bourbaki A.VI.12 Prop 9 d)
 -- |a| = a⁺ - a⁻
@@ -303,14 +233,14 @@ begin
   refine le_antisymm _ _,
   { refine sup_le _ _,
     { nth_rewrite 0 ← mul_one a,
-      exact mul_le_mul' (m_le_pos a) (one_le_neg a) },
+      exact mul_le_mul' (m_le_pos a) (one_le_neg_part a) },
     { nth_rewrite 0 ← one_mul (a⁻¹),
-      exact mul_le_mul' (one_le_pos a) (inv_le_neg a) } },
+      exact mul_le_mul' (one_le_pos_part a) (inv_le_neg_part a) } },
   { rw [← inf_mul_sup, pos_inf_neg_eq_one, one_mul, ← m_pos_abs a],
     apply sup_le,
-    { exact ((m_le_iff_pos_le_neg_ge _ _).mp (le_mabs a)).left, },
-    { rw neg_eq_pos_inv,
-      exact ((m_le_iff_pos_le_neg_ge _ _).mp (inv_le_abs a)).left, }, }
+    { exact ((m_le_iff_pos_le_neg_ge _ _).mp (le_mabs_self a)).left, },
+    { rw neg_part_eq_pos_part_inv,
+      exact ((m_le_iff_pos_le_neg_ge _ _).mp (inv_le_mabs_self a)).left, }, }
 end
 
 -- a ⊔ b - (a ⊓ b) = |b - a|
@@ -396,20 +326,20 @@ equal to its positive component `a⁺`.
 -/
 @[to_additive] -- pos_of_nonneg
 lemma pos_of_one_le (a : α) (h : 1 ≤ a) : a⁺ = a :=
-by { rw m_pos_part_def, exact sup_of_le_left h, }
+by { rw pos_part_eq_sup_one, exact sup_of_le_left h, }
 
 -- 0 ≤ a implies a⁺ = a
 @[to_additive] -- pos_of_nonpos
 lemma pos_of_le_one (a : α) (h : a ≤ 1) : a⁺ = 1 :=
-pos_eq_one_iff.mpr h
+pos_part_eq_one_iff.mpr h
 
 @[to_additive neg_of_inv_nonneg]
 lemma neg_of_one_le_inv (a : α) (h : 1 ≤ a⁻¹) : a⁻ = a⁻¹ :=
-by { rw neg_eq_pos_inv, exact pos_of_one_le _ h, }
+by { rw neg_part_eq_pos_part_inv, exact pos_of_one_le _ h, }
 
 @[to_additive] -- neg_of_neg_nonpos
 lemma neg_of_inv_le_one (a : α) (h : a⁻¹ ≤ 1) : a⁻ = 1 :=
-neg_eq_one_iff'.mpr h
+neg_part_eq_one_iff'.mpr h
 
 @[to_additive] -- neg_of_nonpos
 lemma neg_of_le_one [covariant_class α α (*) (≤)] (a : α) (h : a ≤ 1) : a⁻ = a⁻¹ :=
@@ -471,9 +401,9 @@ The absolute value satisfies the triangle inequality.
 lemma mabs_mul_le [covariant_class α α (*) (≤)] (a b : α) : |a * b| ≤ |a| * |b| :=
 begin
   apply sup_le,
-  { exact mul_le_mul' (le_mabs a) (le_mabs b), },
+  { exact mul_le_mul' (le_mabs_self a) (le_mabs_self b), },
   { rw mul_inv,
-    exact mul_le_mul' (inv_le_abs _) (inv_le_abs _), }
+    exact mul_le_mul' (inv_le_mabs_self _) (inv_le_mabs_self _), }
 end
 
 -- |a - b| = |b - a|
@@ -496,7 +426,7 @@ begin
     { rw div_mul_cancel', },
     { rw div_mul_cancel', },
     { exact covariant_swap_mul_le_of_covariant_mul_le α, } },
-  { rw [div_eq_mul_inv, mul_inv_rev, inv_inv, mul_inv_le_iff_le_mul, ← abs_eq_sup_inv (a / b),
+  { rw [div_eq_mul_inv, mul_inv_rev, inv_inv, mul_inv_le_iff_le_mul, ← mabs_eq_sup_inv (a / b),
       abs_inv_comm],
     convert  mabs_mul_le (b/a) a,
     { rw div_mul_cancel', },
