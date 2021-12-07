@@ -885,7 +885,7 @@ class lattice_comm_group (α : Type u) extends ordered_comm_group α, lattice α
 @[to_additive]
 instance order_dual.lattice_comm_group [h : lattice_comm_group α] :
   lattice_comm_group (order_dual α) :=
-{ ..h, }
+{ ..order_dual.ordered_comm_group, ..order_dual.lattice α }
 
 section lattice_comm_group
 

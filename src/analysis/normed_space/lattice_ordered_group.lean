@@ -42,15 +42,15 @@ respect which `α` forms a lattice. Suppose that `α` is *solid*, that is to say
 said to be a normed lattice ordered group.
 -/
 class normed_lattice_add_comm_group (α : Type*)
-  extends normed_group α, lattice α :=
-(add_le_add_left : ∀ a b : α, a ≤ b → ∀ c : α, c + a ≤ c + b)
+  extends lattice_add_comm_group α, has_norm α, metric_space α :=
+(dist_eq : ∀ x y, dist x y = ∥x - y∥)
 (solid : ∀ a b : α, |a| ≤ |b| → ∥a∥ ≤ ∥b∥)
 
 lemma solid {α : Type*} [normed_lattice_add_comm_group α] {a b : α} (h : |a| ≤ |b|) : ∥a∥ ≤ ∥b∥ :=
 normed_lattice_add_comm_group.solid a b h
 
 noncomputable instance : normed_lattice_add_comm_group ℝ :=
-{ add_le_add_left := λ _ _ h _, add_le_add le_rfl h,
+{ dist_eq := λ _ _, rfl,
   solid := λ _ _, id, }
 /--
 A normed lattice ordered group is an ordered additive commutative group
@@ -71,8 +71,8 @@ open lattice_ordered_comm_group
 lemma dual_solid (a b : α) (h: b⊓-b ≤ a⊓-a) : ∥a∥ ≤ ∥b∥ :=
 begin
   apply solid,
-  rw abs_eq_sup_neg,
   nth_rewrite 0 ← neg_neg a,
+  rw abs_eq_sup_neg,
   rw ← neg_inf_eq_sup_neg,
   rw abs_eq_sup_neg,
   nth_rewrite 0 ← neg_neg b,
@@ -85,19 +85,11 @@ Let `α` be a normed lattice ordered group, then the order dual is also a
 normed lattice ordered group.
 -/
 @[priority 100] -- see Note [lower instance priority]
-instance : normed_lattice_add_comm_group (order_dual α) :=
-{ add_le_add_left := begin
-    intros a b h₁ c,
-    rw ← order_dual.dual_le,
-    rw ← order_dual.dual_le at h₁,
-    exact add_le_add_left h₁ _,
-  end,
-  solid := begin
-    intros a b h₂,
-    apply dual_solid,
-    rw ← order_dual.dual_le at h₂,
-    finish,
-  end, }
+instance {α : Type*} [h : normed_lattice_add_comm_group α] :
+  normed_lattice_add_comm_group (order_dual α) :=
+{ dist_eq := h.dist_eq,
+  solid := λ a b h₂, dual_solid a b h₂,
+  ..order_dual.lattice_add_comm_group }
 
 lemma norm_abs_eq_norm (a : α) : ∥|a|∥ = ∥a∥ :=
 (solid (abs_abs a).le).antisymm (solid (abs_abs a).symm.le)
