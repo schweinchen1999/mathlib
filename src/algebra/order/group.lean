@@ -1324,14 +1324,6 @@ begin
     exact (sup_sub_sup_le_sup _ _ _ _).trans (sup_le_sup (le_abs_self _) (le_abs_self _)) }
 end
 
-lemma abs_inf_sub_inf_le_sup (a b c d : α) : |(a ⊓ b) - (c ⊓ d)| ≤ (|a - c|) ⊔ (|b - d|) :=
-by simpa only [max_neg_neg, neg_sub_neg, abs_sub_comm]
-  using abs_max_sub_max_le_max (-a) (-b) (-c) (-d)
-
-lemma abs_sup_sub_sup_le_abs (a b c : α) : |(a ⊔ c) - (b ⊔ c)| ≤ |a - b| :=
-by simpa only [sub_self, abs_zero, max_eq_left (abs_nonneg _)]
-  using abs_max_sub_max_le_max a c b c
-
 end add_comm_group
 
 end covariant_add_le
