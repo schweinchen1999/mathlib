@@ -869,6 +869,25 @@ end densely_ordered
 end linear_order
 
 /-!
+### Lattice ordered commutative groups
+-/
+
+/-- An `add_comm_group` with a `lattice` structure in which we have the property
+`add_le_add_left : ∀ a b : α, a ≤ b → ∀ c : α, c + a ≤ c + b`. -/
+@[protect_proj, ancestor ordered_add_comm_group lattice]
+class lattice_add_comm_group (α : Type u) extends ordered_add_comm_group α, lattice α
+
+/-- A `comm_group` with a `lattice` structure in which we have the property
+`mul_le_mul_left : ∀ a b : α, a ≤ b → ∀ c : α, c * a ≤ c * b`. -/
+@[protect_proj, ancestor ordered_comm_group lattice, to_additive]
+class lattice_comm_group (α : Type u) extends ordered_comm_group α, lattice α
+
+@[to_additive]
+instance order_dual.lattice_comm_group [h : lattice_comm_group α] :
+  lattice_comm_group (order_dual α) :=
+{ ..h, }
+
+/-!
 ### Linearly ordered commutative groups
 -/
 
@@ -895,6 +914,11 @@ class linear_ordered_comm_group (α : Type u) extends ordered_comm_group α, lin
 @[to_additive] instance [linear_ordered_comm_group α] :
   linear_ordered_comm_group (order_dual α) :=
 { .. order_dual.ordered_comm_group, .. order_dual.linear_order α }
+
+@[to_additive]
+instance linear_ordered_comm_group.to_lattice_comm_group [h : linear_ordered_comm_group α] :
+  lattice_comm_group α :=
+{ ..h, ..lattice_of_linear_order }
 
 section linear_ordered_comm_group
 variables [linear_ordered_comm_group α] {a b c : α}
@@ -1236,7 +1260,7 @@ end add_group
 
 section add_comm_group
 
-variables [add_comm_group α] [lattice α] [covariant_class α α (+) (≤)]
+variables [lattice_add_comm_group α] {a b c d : α}
 
 /-- The **triangle inequality**. -/
 lemma abs_add (a b : α) : |a + b| ≤ |a| + |b| :=
@@ -1249,14 +1273,6 @@ end
 theorem abs_sub (a b : α) : |a - b| ≤ |a| + |b| :=
 by { rw [sub_eq_add_neg, ←abs_neg b], exact abs_add a _ }
 
-end add_comm_group
-
-end covariant_add_le
-
-section linear_ordered_add_comm_group
-
-variables [linear_ordered_add_comm_group α] {a b c d : α}
-
 lemma neg_le_of_abs_le (h : |a| ≤ b) : -b ≤ a := (abs_le.mp h).1
 
 lemma le_of_abs_le (h : |a| ≤ b) : a ≤ b := (abs_le.mp h).2
@@ -1264,20 +1280,11 @@ lemma le_of_abs_le (h : |a| ≤ b) : a ≤ b := (abs_le.mp h).2
 lemma abs_sub_le_iff : |a - b| ≤ c ↔ a - b ≤ c ∧ b - a ≤ c :=
 by rw [abs_le, neg_le_sub_iff_le_add, sub_le_iff_le_add', and_comm, sub_le_iff_le_add']
 
-lemma abs_sub_lt_iff : |a - b| < c ↔ a - b < c ∧ b - a < c :=
-by rw [abs_lt, neg_lt_sub_iff_lt_add', sub_lt_iff_lt_add', and_comm, sub_lt_iff_lt_add']
-
 lemma sub_le_of_abs_sub_le_left (h : |a - b| ≤ c) : b - c ≤ a :=
 sub_le.1 $ (abs_sub_le_iff.1 h).2
 
 lemma sub_le_of_abs_sub_le_right (h : |a - b| ≤ c) : a - c ≤ b :=
 sub_le_of_abs_sub_le_left (abs_sub_comm a b ▸ h)
-
-lemma sub_lt_of_abs_sub_lt_left (h : |a - b| < c) : b - c < a :=
-sub_lt.1 $ (abs_sub_lt_iff.1 h).2
-
-lemma sub_lt_of_abs_sub_lt_right (h : |a - b| < c) : a - c < b :=
-sub_lt_of_abs_sub_lt_left (abs_sub_comm a b ▸ h)
 
 lemma abs_sub_abs_le_abs_sub (a b : α) : |a| - |b| ≤ |a - b| :=
 sub_le_iff_le_add.2 $
@@ -1286,6 +1293,61 @@ calc |a| = |a - b + b|     : by rw [sub_add_cancel]
 
 lemma abs_abs_sub_abs_le_abs_sub (a b : α) : | |a| - |b| | ≤ |a - b| :=
 abs_sub_le_iff.2 ⟨abs_sub_abs_le_abs_sub _ _, by rw abs_sub_comm; apply abs_sub_abs_le_abs_sub⟩
+
+lemma abs_sub_le (a b c : α) : |a - c| ≤ |a - b| + |b - c| :=
+calc
+    |a - c| = |a - b + (b - c)|     : by rw [sub_add_sub_cancel]
+            ... ≤ |a - b| + |b - c| : abs_add _ _
+
+lemma abs_add_three (a b c : α) : |a + b + c| ≤ |a| + |b| + |c| :=
+(abs_add _ _).trans (add_le_add_right (abs_add _ _) _)
+
+lemma dist_bdd_within_interval {a b lb ub : α} (hal : lb ≤ a) (hau : a ≤ ub)
+      (hbl : lb ≤ b) (hbu : b ≤ ub) : |a - b| ≤ ub - lb :=
+abs_sub_le_iff.2 ⟨sub_le_sub hau hbl, sub_le_sub hbu hal⟩
+
+lemma sup_sub_sup_le_sup (a b c d : α) : (a ⊔ b) - (c ⊔ d) ≤ (a - c) ⊔ (b - d) :=
+begin
+  rw [sub_le_iff_le_add, sup_le_iff],
+  split,
+  { calc a = a - c + c : (sub_add_cancel a c).symm
+    ... ≤ (a - c) ⊔ (b - d) + (c ⊔ d) : add_le_add le_sup_left le_sup_left, },
+  { calc b = b - d + d : (sub_add_cancel b d).symm
+    ... ≤ (a - c) ⊔ (b - d) + (c ⊔ d) : add_le_add le_sup_right le_sup_right, },
+end
+
+lemma abs_sup_sub_sup_le_sup (a b c d : α) : |(a ⊔ b) - (c ⊔ d)| ≤ (|a - c|) ⊔ (|b - d|) :=
+begin
+  refine abs_sub_le_iff.2 ⟨_, _⟩,
+  { exact (sup_sub_sup_le_sup _ _ _ _).trans (sup_le_sup (le_abs_self _) (le_abs_self _)) },
+  { rw [abs_sub_comm a c, abs_sub_comm b d],
+    exact (sup_sub_sup_le_sup _ _ _ _).trans (sup_le_sup (le_abs_self _) (le_abs_self _)) }
+end
+
+lemma abs_inf_sub_inf_le_sup (a b c d : α) : |(a ⊓ b) - (c ⊓ d)| ≤ (|a - c|) ⊔ (|b - d|) :=
+by simpa only [max_neg_neg, neg_sub_neg, abs_sub_comm]
+  using abs_max_sub_max_le_max (-a) (-b) (-c) (-d)
+
+lemma abs_sup_sub_sup_le_abs (a b c : α) : |(a ⊔ c) - (b ⊔ c)| ≤ |a - b| :=
+by simpa only [sub_self, abs_zero, max_eq_left (abs_nonneg _)]
+  using abs_max_sub_max_le_max a c b c
+
+end add_comm_group
+
+end covariant_add_le
+
+section linear_ordered_add_comm_group
+
+variables [linear_ordered_add_comm_group α] {a b c d : α}
+
+lemma abs_sub_lt_iff : |a - b| < c ↔ a - b < c ∧ b - a < c :=
+by rw [abs_lt, neg_lt_sub_iff_lt_add', sub_lt_iff_lt_add', and_comm, sub_lt_iff_lt_add']
+
+lemma sub_lt_of_abs_sub_lt_left (h : |a - b| < c) : b - c < a :=
+sub_lt.1 $ (abs_sub_lt_iff.1 h).2
+
+lemma sub_lt_of_abs_sub_lt_right (h : |a - b| < c) : a - c < b :=
+sub_lt_of_abs_sub_lt_left (abs_sub_comm a b ▸ h)
 
 lemma abs_eq (hb : 0 ≤ b) : |a| = b ↔ a = b ∨ a = -b :=
 begin
@@ -1301,37 +1363,14 @@ abs_le'.2
 lemma eq_of_abs_sub_eq_zero {a b : α} (h : |a - b| = 0) : a = b :=
 sub_eq_zero.1 $ abs_eq_zero.1 h
 
-lemma abs_sub_le (a b c : α) : |a - c| ≤ |a - b| + |b - c| :=
-calc
-    |a - c| = |a - b + (b - c)|     : by rw [sub_add_sub_cancel]
-            ... ≤ |a - b| + |b - c| : abs_add _ _
-
-lemma abs_add_three (a b c : α) : |a + b + c| ≤ |a| + |b| + |c| :=
-(abs_add _ _).trans (add_le_add_right (abs_add _ _) _)
-
-lemma dist_bdd_within_interval {a b lb ub : α} (hal : lb ≤ a) (hau : a ≤ ub)
-      (hbl : lb ≤ b) (hbu : b ≤ ub) : |a - b| ≤ ub - lb :=
-abs_sub_le_iff.2 ⟨sub_le_sub hau hbl, sub_le_sub hbu hal⟩
-
 lemma eq_of_abs_sub_nonpos (h : |a - b| ≤ 0) : a = b :=
 eq_of_abs_sub_eq_zero (le_antisymm h (abs_nonneg (a - b)))
 
 lemma max_sub_max_le_max (a b c d : α) : max a b - max c d ≤ max (a - c) (b - d) :=
-begin
-  simp only [sub_le_iff_le_add, max_le_iff], split,
-  calc a = a - c + c : (sub_add_cancel a c).symm
-  ... ≤ max (a - c) (b - d) + max c d : add_le_add (le_max_left _ _) (le_max_left _ _),
-  calc b = b - d + d : (sub_add_cancel b d).symm
-  ... ≤ max (a - c) (b - d) + max c d : add_le_add (le_max_right _ _) (le_max_right _ _)
-end
+sup_sub_sup_le_sup a b c d
 
 lemma abs_max_sub_max_le_max (a b c d : α) : |max a b - max c d| ≤ max (|a - c|) (|b - d|) :=
-begin
-  refine abs_sub_le_iff.2 ⟨_, _⟩,
-  { exact (max_sub_max_le_max _ _ _ _).trans (max_le_max (le_abs_self _) (le_abs_self _)) },
-  { rw [abs_sub_comm a c, abs_sub_comm b d],
-    exact (max_sub_max_le_max _ _ _ _).trans (max_le_max (le_abs_self _) (le_abs_self _)) }
-end
+abs_sup_sub_sup_le_sup a b c d
 
 lemma abs_min_sub_min_le_max (a b c d : α) : |min a b - min c d| ≤ max (|a - c|) (|b - d|) :=
 by simpa only [max_neg_neg, neg_sub_neg, abs_sub_comm]
