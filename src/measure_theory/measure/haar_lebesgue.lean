@@ -140,7 +140,7 @@ begin
     map_map Cesymm.measurable Ce.measurable, ecomp, measure.map_id]
 end
 
-@[simp] lemma haar_preimage_linear_map
+@[simp] lemma add_haar_preimage_linear_map
   {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
   [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
   {f : E →ₗ[ℝ] E} (hf : f.det ≠ 0) (s : set E) :
@@ -151,30 +151,82 @@ calc μ (f ⁻¹' s) = measure.map f μ s :
 ... = ennreal.of_real (abs (f.det)⁻¹) * μ s :
   by { rw map_linear_map_add_haar_eq_smul_add_haar μ hf, refl }
 
-@[simp] lemma haar_preimage_continuous_linear_map
+@[simp] lemma add_haar_preimage_continuous_linear_map
   {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
   [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
   {f : E →L[ℝ] E} (hf : linear_map.det (f : E →ₗ[ℝ] E) ≠ 0) (s : set E) :
   μ (f ⁻¹' s) = ennreal.of_real (abs (linear_map.det (f : E →ₗ[ℝ] E))⁻¹) * μ s :=
-haar_preimage_linear_map μ hf s
+add_haar_preimage_linear_map μ hf s
 
-@[simp] lemma haar_preimage_linear_equiv
+@[simp] lemma add_haar_preimage_linear_equiv
   {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
   [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
   (f : E ≃ₗ[ℝ] E) (s : set E) :
   μ (f ⁻¹' s) = ennreal.of_real (abs (f.symm : E →ₗ[ℝ] E).det) * μ s :=
 begin
   have A : (f : E →ₗ[ℝ] E).det ≠ 0 := (linear_equiv.is_unit_det' f).ne_zero,
-  convert haar_preimage_linear_map μ A s,
+  convert add_haar_preimage_linear_map μ A s,
   simp only [linear_equiv.det_symm],
 end
 
-@[simp] lemma haar_preimage_continuous_linear_equiv
+@[simp] lemma add_haar_preimage_continuous_linear_equiv
   {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
   [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
   (f : E ≃L[ℝ] E) (s : set E) :
   μ (f ⁻¹' s) = ennreal.of_real (abs (f.symm : E →ₗ[ℝ] E).det) * μ s :=
-haar_preimage_linear_equiv μ _ s
+add_haar_preimage_linear_equiv μ _ s
+
+lemma add_haar_eq_zero_of_disjoint_translates
+  {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
+  [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
+  {s : set E} (u : ℕ → E) (hu : tendsto u at_top (𝓝 0)) (hs : ∀ m n, m ≠ n → u m - u n ∉ s)
+  (h's : measurable_set s) :
+  μ s = 0 := sorry
+
+lemma add_haar_submodule
+  {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
+  [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
+  (s : submodule ℝ E) (hs : s ≠ ⊤) : μ s = 0 :=
+begin
+  obtain ⟨x, hx⟩ : ∃ x, x ∉ s,
+    by simpa only [submodule.eq_top_iff', not_exists, ne.def, not_forall] using hs,
+  obtain ⟨c, cpos, cone⟩ : ∃ (c : ℝ), 0 < c ∧ c < 1 := sorry, --⟨1/2, by norm_num, by norm_num⟩,
+  have L : tendsto (λ (n : ℕ), (c ^ n) • x) at_top (𝓝 ((0 : ℝ) • x)) :=
+    (tendsto_pow_at_top_nhds_0_of_lt_1 cpos.le cone).smul_const x,
+  rw zero_smul at L,
+  apply add_haar_eq_zero_of_disjoint_translates μ _ L,
+end
+
+#exit
+
+
+@[simp] lemma add_haar_image_linear_map
+  {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
+  [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
+  {f : E →ₗ[ℝ] E} (s : set E) :
+  μ (f '' s) = ennreal.of_real (abs f.det) * μ s :=
+begin
+  rcases ne_or_eq f.det 0 with hf|hf,
+  sorry,
+  /-{ let g := (f.equiv_of_det_ne_zero hf).to_continuous_linear_equiv,
+    change μ (g '' s) = _,
+    rw [continuous_linear_equiv.image_eq_preimage g s, add_haar_preimage_continuous_linear_equiv],
+    congr,
+    ext x,
+    simp only [linear_equiv.of_is_unit_det_apply, linear_equiv.to_continuous_linear_equiv_apply,
+      continuous_linear_equiv.symm_symm, continuous_linear_equiv.coe_coe,
+      continuous_linear_map.coe_coe, linear_equiv.to_fun_eq_coe, coe_coe] },-/
+  { simp only [hf, zero_mul, ennreal.of_real_zero, abs_zero],
+    obtain ⟨x, hx⟩ : ∃ (x : E), x ∉ f.range,
+      by simpa only [submodule.eq_top_iff', not_exists, ne.def, not_forall]
+        using (linear_map.range_lt_top_of_det_eq_zero hf).ne,
+
+
+
+  }
+end
+
+#exit
 
 /-!
 ### Basic properties of Haar measures on real vector spaces
@@ -329,104 +381,6 @@ begin
   { simp only [← closed_ball_diff_ball, diff_empty, closed_ball_zero,
                ball_zero, measure_singleton] },
   { exact add_haar_sphere_of_ne_zero μ x h }
-end
-
-lemma tendsto_add_haar_preimage_ball_div_add_haar_ball
-  (f : local_homeomorph E E) (f' : E → (E ≃L[ℝ] E))
-  (h : ∀ x ∈ f.source, has_fderiv_at f (f' x : E →L[ℝ] E) x)
-  (y : E) (y_mem : y ∈ f.target) :
-  tendsto (λ r, μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r)) (𝓝[Ioi (0 : ℝ)] 0)
-    (𝓝 (ennreal.of_real (abs (linear_map.det ((f' (f.symm y)).symm : E →ₗ[ℝ] E))))) :=
-begin
-  let d := ennreal.of_real (abs (linear_map.det ((f' (f.symm y)).symm : E →ₗ[ℝ] E))),
-  let x := f.symm y,
-  have x_mem : x ∈ f.source := f.map_target y_mem,
-  have A : ∀ l, l < d → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-      l < μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r),
-  { assume l hl,
-    have L : tendsto (λ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d) (𝓝[Ico 0 1] 1)
-      (𝓝 (ennreal.of_real (1 ^ finrank ℝ E) * d)),
-    { apply ennreal.tendsto.mul_const _ (or.inr ennreal.of_real_ne_top),
-      apply ennreal.tendsto_of_real (tendsto.pow _ _),
-      exact nhds_within_le_nhds, },
-    simp only [one_pow, one_mul, ennreal.of_real_one] at L,
-    haveI : (𝓝[Ico (0 : ℝ) 1] 1).ne_bot := right_nhds_within_Ico_ne_bot zero_lt_one,
-    obtain ⟨t, tlim, ht⟩ : ∃ (t : ℝ), l < ennreal.of_real (t ^ finrank ℝ E) * d ∧
-      t ∈ Ico (0 : ℝ) 1 := (((tendsto_order.1 L).1 _ hl).and self_mem_nhds_within).exists,
-    have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-      ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d * μ (closed_ball 0 1)
-        ≤ μ (f.source ∩ f ⁻¹' (closed_ball y r)),
-    { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' x ⁻¹' (closed_ball 0 1)
-        ⊆ f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1) :=
-          eventually_smul_preimage_fderiv_subset_inter_preimage (h x x_mem)
-            (convex_closed_ball _ _) (closed_ball_mem_nhds _ zero_lt_one) bounded_closed_ball ht
-            (f.open_source.mem_nhds x_mem),
-      filter_upwards [this, self_mem_nhds_within],
-      assume r hr r_pos,
-      replace r_pos : 0 < r := r_pos,
-      calc
-      ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d
-        * μ (closed_ball 0 1)
-      = μ ({x} + r • t • ⇑(f' x) ⁻¹' closed_ball 0 1) :
-        by simp only [abs_of_nonneg, r_pos.le, ht.left, add_haar_smul, image_add_left, pow_nonneg,
-          add_haar_preimage_add, singleton_add, mul_assoc, haar_preimage_continuous_linear_equiv]
-      ... ≤ μ (f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)) : measure_mono hr
-      ... = μ (f.source ∩ f ⁻¹' closed_ball y r) :
-        by simp only [y_mem, smul_closed_ball, zero_le_one, real.norm_eq_abs, abs_of_nonneg r_pos.le,
-          mul_one, preimage_add_closed_ball, image_add_left, local_homeomorph.right_inv, zero_add,
-          singleton_add, smul_zero, sub_neg_eq_add] },
-    filter_upwards [this, self_mem_nhds_within],
-    assume r hr rpos,
-    replace rpos : 0 < r := rpos,
-    apply tlim.trans_le,
-    rw [ennreal.le_div_iff_mul_le (or.inl (add_haar_closed_ball_pos μ _ rpos).ne')
-      (or.inl (add_haar_closed_ball_lt_top μ _ _).ne), add_haar_closed_ball' μ _ rpos.le],
-    convert hr using 1,
-    ring },
-  have B : ∀ m, d < m → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-      μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r) < m,
-  { assume m hm,
-    have L : tendsto (λ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d) (𝓝[Ioi 1] 1)
-      (𝓝 (ennreal.of_real (1 ^ finrank ℝ E) * d)),
-    { apply ennreal.tendsto.mul_const _ (or.inr ennreal.of_real_ne_top),
-      apply ennreal.tendsto_of_real (tendsto.pow _ _),
-      exact nhds_within_le_nhds, },
-    simp only [one_pow, one_mul, ennreal.of_real_one] at L,
-    obtain ⟨t, tlim, ht⟩ : ∃ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d < m ∧
-      1 < t := (((tendsto_order.1 L).2 _ hm).and self_mem_nhds_within).exists,
-    have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), μ (f.source ∩ f ⁻¹' (closed_ball y r)) ≤
-      ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E)
-        * d * μ (closed_ball 0 1),
-     { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)
-        ⊆ {x} + r • t • f' x ⁻¹' (closed_ball 0 1) :=
-          eventually_preimage_smul_subset_preimage_fderiv x_mem (h x x_mem)
-          (convex_closed_ball _ _) (closed_ball_mem_nhds _ zero_lt_one) bounded_closed_ball ht,
-      filter_upwards [this, self_mem_nhds_within],
-      assume r hr r_pos,
-      replace r_pos : 0 < r := r_pos,
-      calc
-      μ (f.source ∩ f ⁻¹' (closed_ball y r))
-      = μ (f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)) :
-        by simp only [y_mem, smul_closed_ball, zero_le_one, real.norm_eq_abs, abs_of_nonneg r_pos.le,
-          mul_one, preimage_add_closed_ball, image_add_left, local_homeomorph.right_inv, zero_add,
-          singleton_add, smul_zero, sub_neg_eq_add]
-      ... ≤ μ ({x} + r • t • ⇑(f' x) ⁻¹' closed_ball 0 1) : measure_mono hr
-      ... = ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d
-        * μ (closed_ball 0 1) : begin
-          simp only [abs_of_nonneg, r_pos.le, (zero_lt_one.trans ht).le, mul_assoc, add_haar_smul,
-            image_add_left, pow_nonneg, add_haar_preimage_add, singleton_add,
-            haar_preimage_continuous_linear_equiv, coe_coe],
-          refl,
-        end },
-    filter_upwards [this, self_mem_nhds_within],
-    assume r hr rpos,
-    replace rpos : 0 < r := rpos,
-    apply lt_of_le_of_lt (ennreal.div_le_of_le_mul _) tlim,
-    rw [add_haar_closed_ball' μ _ rpos.le],
-    convert hr using 1,
-    ring },
-  exact tendsto_order.2 ⟨A, B⟩,
-
 end
 
 
