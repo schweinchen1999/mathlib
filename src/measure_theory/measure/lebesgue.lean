@@ -320,8 +320,9 @@ begin
     rw [volume_preimage_mul_left A, ← mul_assoc, ← ennreal.of_real_mul (abs_nonneg _), ← abs_mul,
       mul_inv_cancel A, abs_one, ennreal.of_real_one, one_mul] },
   rw [this, volume_pi_pi, finset.abs_prod,
-    ennreal.of_real_prod_of_nonneg (λ i hi, abs_nonneg (D i)), ← finset.prod_mul_distrib],
-  simp only [B]
+    ennreal.of_real_prod_of_nonneg (λ i _, _), ← finset.prod_mul_distrib],
+  { simp only [B], },
+  { exact abs_nonneg (D i), },
 end
 
 /-- A transvection preserves Lebesgue measure. -/
