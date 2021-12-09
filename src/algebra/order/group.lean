@@ -948,6 +948,15 @@ by simp only [div_eq_mul_inv, mul_inf_mul_left, inv_inf_inv]
 lemma div_sup_div_left (a b c : α) : (a / b) ⊔ (a / c) = a / (b ⊓ c) :=
 by simp only [div_eq_mul_inv, mul_sup_mul_left, inv_sup_inv]
 
+-- Bourbaki A.VI.10 Prop 7
+-- a ⊓ b + (a ⊔ b) = a + b
+@[to_additive]
+lemma inf_mul_sup (a b : α) : (a ⊓ b) * (a ⊔ b) = a * b :=
+calc (a ⊓ b) * (a ⊔ b) = (a ⊓ b) * ((a * b) * (b⁻¹ ⊔ a⁻¹)) :
+  by { rw ← mul_sup_mul_left b⁻¹ a⁻¹ (a * b), simp, }
+... = (a ⊓ b) * ((a * b) * (a ⊓ b)⁻¹) : by rw [← inv_sup_inv, sup_comm]
+... = a * b                            : by rw [mul_comm, inv_mul_cancel_right]
+
 end lattice_comm_group
 
 /-!
@@ -1223,44 +1232,41 @@ sup_ind _ _ h1 h2
 
 end has_neg
 
+section lattice_comm_group
+variables [lattice_comm_group α] {a b : α}
 
 @[to_additive]
-lemma neg_part_eq_one_iff [group α] [lattice α] [covariant_class α α (*) (≤)] {a : α} :
-  a⁻ = 1 ↔ 1 ≤ a :=
+lemma neg_part_eq_one_iff {a : α} : a⁻ = 1 ↔ 1 ≤ a :=
 by { rw neg_part_eq_one_iff', exact inv_le_one', }
 
 @[to_additive] -- neg_part_of_nonneg
-lemma neg_part_of_one_le  [group α] [lattice α] [covariant_class α α (*) (≤)]
-  (a : α) (h : 1 ≤ a) :
-  a⁻ = 1 :=
+lemma neg_part_of_one_le (a : α) (h : 1 ≤ a) : a⁻ = 1 :=
 neg_part_eq_one_iff.mpr h
 
+@[to_additive abs_of_nonneg]
+lemma mabs_of_one_le (h : 1 ≤ a) : |a| = a :=
+sup_eq_left.mpr (left.inv_le_self h)
+
+@[to_additive abs_of_pos]
+lemma mabs_of_one_lt (h : 1 < a) : |a| = a :=
+mabs_of_one_le h.le
+
+@[to_additive abs_of_nonpos]
+lemma mabs_of_le_one (h : a ≤ 1) : |a| = a⁻¹ :=
+sup_eq_right.mpr $ (right.self_le_inv h)
+
+@[to_additive abs_of_neg]
+lemma mabs_of_lt_one (h : a < 1) : |a| = a⁻¹ :=
+mabs_of_le_one h.le
+
+@[to_additive abs_le]
+lemma mabs_le : |a| ≤ b ↔ b⁻¹ ≤ a ∧ a ≤ b :=
+by rw [mabs_le_iff, inv_le']
+
+end lattice_comm_group
 
 section add_group
-variables [add_group α]
-
-section lattice
-variables [lattice α] [covariant_class α α (+) (≤)] {a b c : α}
-
-lemma abs_of_nonneg (h : 0 ≤ a) : |a| = a :=
-sup_eq_left.mpr $ (neg_nonpos.2 h).trans h
-
-lemma abs_of_pos (h : 0 < a) : |a| = a :=
-abs_of_nonneg h.le
-
-lemma abs_of_nonpos (h : a ≤ 0) : |a| = -a :=
-sup_eq_right.mpr $ h.trans (neg_nonneg.2 h)
-
-lemma abs_of_neg (h : a < 0) : |a| = -a :=
-abs_of_nonpos h.le
-
-lemma abs_le [covariant_class α α (swap (+)) (≤)] : |a| ≤ b ↔ - b ≤ a ∧ a ≤ b :=
-by rw [abs_le_iff, neg_le]
-
-end lattice
-
-section linear_order
-variables [linear_order α]
+variables [linear_ordered_add_comm_group α] {a b c : α}
 
 lemma eq_or_eq_neg_of_abs_eq {a b : α} (h : |a| = b) : a = b ∨ a = -b :=
 by simpa only [← h, eq_comm, eq_neg_iff_eq_neg] using abs_choice a
@@ -1272,8 +1278,6 @@ begin
     simpa only [neg_eq_iff_neg_eq, neg_inj, or.comm, @eq_comm _ (-b)] using abs_choice b },
   { cases h; simp only [h, abs_neg] },
 end
-
-variables [covariant_class α α (+) (≤)] {a b c : α}
 
 @[simp] lemma abs_pos : 0 < |a| ↔ a ≠ 0 :=
 begin
@@ -1327,8 +1331,6 @@ end
 
 lemma max_sub_min_eq_abs (a b : α) : max a b - min a b = |b - a| :=
 by { rw abs_sub_comm, exact max_sub_min_eq_abs' _ _ }
-
-end linear_order
 
 end add_group
 
@@ -1443,8 +1445,8 @@ by simpa only [max_neg_neg, neg_sub_neg, abs_sub_comm]
   using abs_max_sub_max_le_max (-a) (-b) (-c) (-d)
 
 lemma abs_max_sub_max_le_abs (a b c : α) : |max a c - max b c| ≤ |a - b| :=
-by simpa only [sub_self, abs_zero, max_eq_left (abs_nonneg _)]
-  using abs_max_sub_max_le_max a c b c
+(abs_max_sub_max_le_max a c b c).trans
+  (by rw [sub_self, abs_zero, max_eq_left (abs_nonneg (a - b))])
 
 instance with_top.linear_ordered_add_comm_group_with_top :
   linear_ordered_add_comm_group_with_top (with_top α) :=

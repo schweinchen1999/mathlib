@@ -61,15 +61,6 @@ universe u
 
 variables {α : Type u} [lattice_comm_group α]
 
--- Bourbaki A.VI.10 Prop 7
--- a ⊓ b + (a ⊔ b) = a + b
-@[to_additive]
-lemma inf_mul_sup (a b : α) : a ⊓ b * (a ⊔ b) = a * b :=
-calc a ⊓ b * (a ⊔ b) = a ⊓ b * ((a * b) * (b⁻¹ ⊔ a⁻¹)) :
-  by { rw ← mul_sup_mul_left b⁻¹ a⁻¹ (a * b), simp, }
-... = a ⊓ b * ((a * b) * (a ⊓ b)⁻¹) : by rw [← inv_sup_inv, sup_comm]
-... = a * b                       : by rw [mul_comm, inv_mul_cancel_right]
-
 namespace lattice_ordered_comm_group
 
 -- a⁻ = -(a ⊓ 0)
