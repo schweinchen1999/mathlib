@@ -75,7 +75,7 @@ open lattice_ordered_comm_group
 lemma dual_solid (a b : α) (h : b⊓-b ≤ a⊓-a) : ∥a∥ ≤ ∥b∥ :=
 begin
   have h₂ := neg_le_neg h,
-  rw [neg_inf_eq_sup_neg, neg_inf_eq_sup_neg, neg_neg, neg_neg, sup_comm, @sup_comm _ _ _ b] at h₂,
+  rw [← neg_sup_neg, ← neg_sup_neg, neg_neg, neg_neg, sup_comm, @sup_comm _ _ _ b] at h₂,
   exact solid h₂,
 end
 
