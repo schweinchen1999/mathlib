@@ -987,7 +987,7 @@ class linear_ordered_comm_group (α : Type u) extends ordered_comm_group α, lin
   linear_ordered_comm_group (order_dual α) :=
 { .. order_dual.ordered_comm_group, .. order_dual.linear_order α }
 
-@[to_additive]
+@[priority 100, to_additive]
 instance linear_ordered_comm_group.to_lattice_comm_group [h : linear_ordered_comm_group α] :
   lattice_comm_group α :=
 { ..h, ..lattice_of_linear_order }
@@ -1090,13 +1090,13 @@ section without_covariant
 variables [lattice α]
 
 /-- `abs a` is the absolute value of `a`. -/
-@[to_additive, priority 100] -- see Note [lower instance priority]
+@[priority 100, to_additive] -- see Note [lower instance priority]
 instance has_inv_lattice_has_abs [has_inv α] : has_abs (α) := ⟨λ a, a ⊔ a⁻¹⟩
 
-@[to_additive, priority 100] -- see Note [lower instance priority]
+@[priority 100, to_additive] -- see Note [lower instance priority]
 instance has_one_lattice_has_pos_part [has_one α] : has_pos_part (α) := ⟨λ a, a ⊔ 1⟩
 
-@[to_additive, priority 100] -- see Note [lower instance priority]
+@[priority 100, to_additive] -- see Note [lower instance priority]
 instance has_one_lattice_has_neg_part [has_inv α] [has_one α] :
   has_neg_part (α) := ⟨λ a, a⁻¹ ⊔ 1⟩
 
