@@ -61,33 +61,13 @@ universe u
 
 variables {α : Type u} [lattice_comm_group α]
 
--- Special case of Bourbaki A.VI.9 (2)
--- -(a ⊔ b)=(-a) ⊓ (-b)
-@[to_additive]
-lemma inv_sup_eq_inv_inf_inv [covariant_class α α (*) (≤)] (a b : α) : (a ⊔ b)⁻¹ = a⁻¹ ⊓ b⁻¹ :=
-begin
-  apply le_antisymm,
-  { refine le_inf _ _,
-    { rw inv_le_inv_iff, exact le_sup_left, },
-    { rw inv_le_inv_iff, exact le_sup_right, } },
-  { rw [← inv_le_inv_iff, inv_inv],
-    refine sup_le _ _,
-    { rw ← inv_le_inv_iff, simp, },
-    { rw ← inv_le_inv_iff, simp, } }
-end
-
--- -(a ⊓ b) = -a ⊔ -b
-@[to_additive]
-lemma inv_inf_eq_sup_inv [covariant_class α α (*) (≤)] (a b : α) : (a ⊓ b)⁻¹ = a⁻¹ ⊔ b⁻¹ :=
-by rw [← inv_inv (a⁻¹ ⊔ b⁻¹), inv_sup_eq_inv_inf_inv a⁻¹ b⁻¹, inv_inv, inv_inv]
-
 -- Bourbaki A.VI.10 Prop 7
 -- a ⊓ b + (a ⊔ b) = a + b
 @[to_additive]
 lemma inf_mul_sup (a b : α) : a ⊓ b * (a ⊔ b) = a * b :=
 calc a ⊓ b * (a ⊔ b) = a ⊓ b * ((a * b) * (b⁻¹ ⊔ a⁻¹)) :
   by { rw ← mul_sup_mul_left b⁻¹ a⁻¹ (a * b), simp, }
-... = a ⊓ b * ((a * b) * (a ⊓ b)⁻¹) : by rw [inv_inf_eq_sup_inv, sup_comm]
+... = a ⊓ b * ((a * b) * (a ⊓ b)⁻¹) : by rw [← inv_sup_inv, sup_comm]
 ... = a * b                       : by rw [mul_comm, inv_mul_cancel_right]
 
 namespace lattice_ordered_comm_group
@@ -95,7 +75,7 @@ namespace lattice_ordered_comm_group
 -- a⁻ = -(a ⊓ 0)
 @[to_additive]
 lemma neg_eq_inv_inf_one [covariant_class α α (*) (≤)] (a : α) : a⁻ = (a ⊓ 1)⁻¹ :=
-by rw [neg_part_eq_inv_sup_one, ← inv_inj, inv_sup_eq_inv_inf_inv, inv_inv, inv_inv, one_inv]
+by rw [neg_part_eq_inv_sup_one, ← inv_inj, ← inv_inf_inv, inv_inv, inv_inv, one_inv]
 
 @[to_additive]
 lemma neg_eq_one_iff [covariant_class α α has_mul.mul has_le.le] {a : α} : a⁻ = 1 ↔ 1 ≤ a :=
@@ -158,7 +138,7 @@ calc a ⊓ b = (a * 1) ⊓ (a * (b / a)) : by { rw [mul_one a, div_eq_mul_inv, m
 ... = a * ((a / b)⁻¹ ⊓ 1)   : by { rw div_eq_mul_inv, nth_rewrite 0 ← inv_inv b,
   rw [← mul_inv, mul_comm b⁻¹, ← div_eq_mul_inv], }
 ... = a * ((a / b)⁻¹ ⊓ 1⁻¹) : by rw one_inv
-... = a / ((a / b) ⊔ 1)     : by rw [← inv_sup_eq_inv_inf_inv, ← div_eq_mul_inv]
+... = a / ((a / b) ⊔ 1)     : by rw [inv_inf_inv, ← div_eq_mul_inv]
 
 -- Bourbaki A.VI.12 Prop 9 c)
 @[to_additive le_iff_pos_le_neg_ge]
