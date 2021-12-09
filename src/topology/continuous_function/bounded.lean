@@ -1068,24 +1068,22 @@ instance  : lattice (α →ᵇ β) :=
 
 @[simp] lemma coe_fn_abs (f : α →ᵇ β) : ⇑|f| = |f| := rfl
 
-instance : lattice_add_comm_group (α →ᵇ β) :=
+instance : normed_lattice_add_comm_group (α →ᵇ β) :=
 { add_le_add_left := begin
     intros f g h₁ h t,
     simp only [coe_to_continuous_fun, pi.add_apply, add_le_add_iff_left, coe_add,
       continuous_map.to_fun_eq_coe],
     exact h₁ _,
   end,
-  ..bounded_continuous_function.add_comm_group,
-  ..bounded_continuous_function.lattice, }
-
-instance : normed_lattice_add_comm_group (α →ᵇ β) :=
-{ dist_eq := λ f g, by simp only [norm_eq, dist_eq, dist_eq_norm, sub_apply],
+  dist_eq := λ f g, by simp only [norm_eq, dist_eq, dist_eq_norm, sub_apply],
   solid :=
   begin
     intros f g h,
     rw norm_le (norm_nonneg _),
     exact λ t, (solid (h t)).trans (norm_coe_le_norm g t),
-  end, }
+  end,
+  ..bounded_continuous_function.add_comm_group,
+  ..bounded_continuous_function.lattice, }
 
 end normed_lattice_ordered_group
 
