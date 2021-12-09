@@ -987,6 +987,10 @@ section linear_ordered_comm_group
 variables [linear_ordered_comm_group α] {a b c : α}
 
 @[priority 100, to_additive] -- see Note [lower instance priority]
+instance linear_ordered_comm_group.to_covariant_class : covariant_class α α (*) (≤) :=
+{ elim := λ a b c bc, linear_ordered_comm_group.mul_le_mul_left _ _ bc a }
+
+@[priority 100, to_additive] -- see Note [lower instance priority]
 instance linear_ordered_comm_group.to_linear_ordered_cancel_comm_monoid :
   linear_ordered_cancel_comm_monoid α :=
 { le_of_mul_le_mul_left := λ x y z, le_of_mul_le_mul_left',
