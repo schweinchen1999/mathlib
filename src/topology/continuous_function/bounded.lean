@@ -1024,10 +1024,8 @@ variables [topological_space α] [normed_lattice_add_comm_group β]
 
 instance : partial_order (α →ᵇ β) := partial_order.lift (λ f, f.to_fun) (by tidy)
 
-/--
-Continuous normed lattice group valued functions form a meet-semilattice
--/
-instance : semilattice_inf (α →ᵇ β) :=
+/-- Continuous normed lattice group valued functions form a lattice -/
+instance : lattice (α →ᵇ β) :=
 { inf := λ f g,
   { to_fun := λ t, f t ⊓ g t,
     continuous_to_fun := f.continuous.inf g.continuous,
@@ -1042,10 +1040,7 @@ instance : semilattice_inf (α →ᵇ β) :=
   inf_le_right := λ f g, continuous_map.le_def.mpr (λ _, inf_le_right),
   le_inf := λ f g₁ g₂ w₁ w₂, continuous_map.le_def.mpr (λ _, le_inf (continuous_map.le_def.mp w₁ _)
     (continuous_map.le_def.mp w₂ _)),
-  ..bounded_continuous_function.partial_order }
-
-instance : semilattice_sup (α →ᵇ β) :=
-{ sup := λ f g,
+  sup := λ f g,
   { to_fun := λ t, f t ⊔ g t,
     continuous_to_fun := f.continuous.sup g.continuous,
     bounded' := begin
@@ -1060,9 +1055,6 @@ instance : semilattice_sup (α →ᵇ β) :=
   sup_le := λ f g₁ g₂ w₁ w₂, continuous_map.le_def.mpr (λ _, sup_le (continuous_map.le_def.mp w₁ _)
     (continuous_map.le_def.mp w₂ _)),
   ..bounded_continuous_function.partial_order }
-
-instance  : lattice (α →ᵇ β) :=
-{ .. bounded_continuous_function.semilattice_sup, .. bounded_continuous_function.semilattice_inf }
 
 @[simp] lemma coe_fn_sup (f g : α →ᵇ β) : ⇑(f ⊔ g) = f ⊔ g := rfl
 
