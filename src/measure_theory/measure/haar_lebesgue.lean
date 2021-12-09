@@ -179,8 +179,8 @@ add_haar_preimage_linear_equiv μ _ s
 lemma add_haar_eq_zero_of_disjoint_translates
   {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
   [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
-  {s : set E} (u : ℕ → E) (hu : tendsto u at_top (𝓝 0)) (hs : ∀ m n, m ≠ n → u m - u n ∉ s)
-  (h's : measurable_set s) :
+  {s : set E} (u : ℕ → E) (hu : tendsto u at_top (𝓝 0))
+  (hs : pairwise (disjoint on (λ n, {u n} + s))) (h's : measurable_set s) :
   μ s = 0 := sorry
 
 lemma add_haar_submodule
@@ -194,7 +194,19 @@ begin
   have L : tendsto (λ (n : ℕ), (c ^ n) • x) at_top (𝓝 ((0 : ℝ) • x)) :=
     (tendsto_pow_at_top_nhds_0_of_lt_1 cpos.le cone).smul_const x,
   rw zero_smul at L,
-  apply add_haar_eq_zero_of_disjoint_translates μ _ L,
+  apply add_haar_eq_zero_of_disjoint_translates μ _ L _
+    (submodule.closed_of_finite_dimensional s).measurable_set,
+  assume m n hmn,
+  simp only [function.on_fun, image_add_left, singleton_add, disjoint_left, mem_preimage,
+             set_like.mem_coe],
+  assume y hym hyn,
+  have A : (c ^ n - c ^ m) • x ∈ s,
+  { convert s.sub_mem hym hyn,
+    simp only [sub_smul, neg_sub_neg, add_sub_add_right_eq_sub] },
+  have : c ^ n ≠ c ^ m,
+  { apply one_div_pow_strict_mono,
+
+  }
 end
 
 #exit

@@ -185,6 +185,10 @@ have 0 < a := zero_le_one.trans_lt h,
 strict_mono_nat_of_lt_succ $ λ n, by simpa only [one_mul, pow_succ]
   using mul_lt_mul h (le_refl (a ^ n)) (pow_pos this _) this.le
 
+lemma strict_anti_pow (h : 0 < a) (h' : a < 1) : strict_anti (λ n : ℕ, a ^ n) :=
+strict_anti_nat_of_succ_lt $ λ n, by simpa only [one_mul, pow_succ]
+  using mul_lt_mul h' (le_refl (a ^ n)) (pow_pos h _) zero_le_one
+
 lemma pow_lt_pow (h : 1 < a) (h2 : n < m) : a ^ n < a ^ m :=
 strict_mono_pow h h2
 
