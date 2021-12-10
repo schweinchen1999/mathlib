@@ -25,7 +25,7 @@ The corresponding notation for equivalences is `M ≃SL[σ] M₂`, `M ≃L[R] M�
 -/
 
 open filter
-open_locale topological_space big_operators filter
+open_locale topological_space big_operators filter pointwise
 
 universes u v w u'
 
@@ -1339,6 +1339,13 @@ by rw [e.symm.image_eq_preimage, e.symm_symm]
 @[simp] protected lemma preimage_symm_preimage (e : M₁ ≃SL[σ₁₂] M₂) (s : set M₁) :
   e ⁻¹' (e.symm ⁻¹' s) = s := e.symm.symm_preimage_preimage s
 
+@[simp] lemma image_smul_set (e : M₁ ≃SL[σ₁₂] M₂) (c : R₁) (s : set M₁) :
+  e '' (c • s) = (σ₁₂ c) • e '' s :=
+e.to_linear_equiv.image_smul_set c s
+
+@[simp] lemma preimage_smul_set (e : M₁ ≃SL[σ₁₂] M₂) (c : R₂) (s : set M₂) :
+  e ⁻¹' (c • s) = σ₂₁ c • e ⁻¹' s :=
+e.to_linear_equiv.preimage_smul_set c s
 omit σ₂₁
 
 /-- Create a `continuous_linear_equiv` from two `continuous_linear_map`s that are

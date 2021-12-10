@@ -2916,12 +2916,12 @@ lemma measure_Ioo_lt_top : μ (Ioo a b) < ∞ :=
 
 end measure_Ixx
 
-lemma metric.bounded.measure_lt_top [metric_space α] [proper_space α]
-  [measurable_space α] {μ : measure α} [is_locally_finite_measure μ] {s : set α}
+lemma metric.bounded.measure_lt_top [pseudo_metric_space α] [proper_space α]
+  {m0 : measurable_space α} {μ : measure α} [is_locally_finite_measure μ] {s : set α}
   (hs : metric.bounded s) :
   μ s < ∞ :=
-(measure_mono subset_closure).trans_lt (metric.compact_iff_closed_bounded.2
-  ⟨is_closed_closure, metric.bounded_closure_of_bounded hs⟩).measure_lt_top
+(measure_mono subset_closure).trans_lt (metric.is_compact_of_is_closed_bounded
+  is_closed_closure hs.closure).measure_lt_top
 
 section piecewise
 

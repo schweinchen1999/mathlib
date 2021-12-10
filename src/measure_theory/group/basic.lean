@@ -345,6 +345,15 @@ lemma _root_.is_compact.haar_lt_top {K : set G} (hK : is_compact K) :
 is_haar_measure.compact_lt_top K hK
 
 @[to_additive]
+lemma _root_.metric.bounded.haar_lt_top {G : Type*} [group G] [measurable_space G]
+  [pseudo_metric_space G] [proper_space G] (μ : measure G) [is_haar_measure μ] {s : set G}
+  (hs : metric.bounded s) :
+  μ s < ∞ :=
+calc μ s ≤ μ (closure s) : measure_mono subset_closure
+... < ∞ : is_compact.haar_lt_top μ $
+            metric.is_compact_of_is_closed_bounded is_closed_closure hs.closure
+
+@[to_additive]
 lemma _root_.is_open.haar_pos {U : set G} (hU : is_open U) (h'U : U.nonempty) :
   0 < μ U :=
 is_haar_measure.open_pos U hU h'U

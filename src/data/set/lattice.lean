@@ -847,6 +847,10 @@ Union_eq_univ_iff.2 $ λ x, ⟨x, rfl⟩
   (⋃ (i : s), {i} : set α) = s :=
 by simp
 
+@[simp] lemma Union_singleton_eq_range {α β : Type*} (f : α → β) :
+  (⋃ (x : α), {f x}) = range f :=
+by { ext x, simp [@eq_comm _ x] }
+
 theorem bUnion_subset_Union (s : set α) (t : α → set β) :
   (⋃ x ∈ s, t x) ⊆ (⋃ x, t x) :=
 Union_subset_Union $ λ i, Union_subset $ λ h, by refl

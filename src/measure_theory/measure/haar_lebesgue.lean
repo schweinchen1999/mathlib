@@ -176,12 +176,57 @@ end
   μ (f ⁻¹' s) = ennreal.of_real (abs (f.symm : E →ₗ[ℝ] E).det) * μ s :=
 add_haar_preimage_linear_equiv μ _ s
 
+@[simp] lemma Union_singleton_eq_range {α β : Type*} (f : α → β) :
+  (⋃ (x : α), {f x}) = range f :=
+by { ext x, simp [@eq_comm _ x] }
+
+
+lemma add_haar_eq_zero_of_disjoint_translates_aux
+  {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
+  [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
+  {s : set E} (u : ℕ → E) (sb : bounded s) (hu : bounded (range u))
+  (hs : pairwise (disjoint on (λ n, {u n} + s))) (h's : measurable_set s) :
+  μ s = 0 :=
+begin
+  by_contra h,
+  apply lt_irrefl ∞,
+  calc
+  ∞ = ∑' (n : ℕ), μ s : (ennreal.tsum_const_eq_top_of_ne_zero h).symm
+  ... = ∑' (n : ℕ), μ ({u n} + s) :
+    by { congr' 1, ext1 n, simp only [image_add_left, add_haar_preimage_add, singleton_add] }
+  ... = μ (⋃ n, {u n} + s) :
+    by rw measure_Union hs
+      (λ n, by simpa only [image_add_left, singleton_add] using measurable_id.const_add _ h's)
+  ... = μ (range u + s) : by rw [← Union_add, Union_singleton_eq_range]
+  ... < ∞ : bounded.add_haar_lt_top μ (hu.add sb)
+end
+
 lemma add_haar_eq_zero_of_disjoint_translates
   {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
   [finite_dimensional ℝ E] (μ : measure E) [is_add_haar_measure μ]
-  {s : set E} (u : ℕ → E) (hu : tendsto u at_top (𝓝 0))
+  {s : set E} (u : ℕ → E) (hu : bounded (range u))
   (hs : pairwise (disjoint on (λ n, {u n} + s))) (h's : measurable_set s) :
-  μ s = 0 := sorry
+  μ s = 0 :=
+begin
+  suffices H : ∀ R, μ (s ∩ closed_ball 0 R) = 0,
+  { apply le_antisymm _ (zero_le _),
+    have : s ⊆ ⋃ (n : ℕ), s ∩ closed_ball 0 n,
+    { assume x hx,
+      obtain ⟨n, hn⟩ : ∃ (n : ℕ), ∥x∥ ≤ n := exists_nat_ge (∥x∥),
+      exact mem_Union.2 ⟨n, ⟨hx, mem_closed_ball_zero_iff.2 hn⟩⟩ },
+    calc μ s ≤ μ (⋃ (n : ℕ), s ∩ closed_ball 0 n) : measure_mono this
+    ... ≤ ∑' (n : ℕ), μ (s ∩ closed_ball 0 n) : measure_Union_le _
+    ... = 0 : by simp only [H, tsum_zero] },
+  assume R,
+  apply add_haar_eq_zero_of_disjoint_translates_aux μ u
+    (bounded.mono (inter_subset_right _ _) bounded_closed_ball) hu _
+    (h's.inter (measurable_set_closed_ball)),
+  rw ← pairwise_univ at ⊢ hs,
+  apply pairwise_disjoint.mono hs (λ n, _),
+  exact add_subset_add (subset.refl _) (inter_subset_left _ _)
+end
+
+
 
 lemma add_haar_submodule
   {E : Type*} [normed_group E] [normed_space ℝ E] [measurable_space E] [borel_space E]
@@ -190,11 +235,12 @@ lemma add_haar_submodule
 begin
   obtain ⟨x, hx⟩ : ∃ x, x ∉ s,
     by simpa only [submodule.eq_top_iff', not_exists, ne.def, not_forall] using hs,
-  obtain ⟨c, cpos, cone⟩ : ∃ (c : ℝ), 0 < c ∧ c < 1 := sorry, --⟨1/2, by norm_num, by norm_num⟩,
-  have L : tendsto (λ (n : ℕ), (c ^ n) • x) at_top (𝓝 ((0 : ℝ) • x)) :=
-    (tendsto_pow_at_top_nhds_0_of_lt_1 cpos.le cone).smul_const x,
-  rw zero_smul at L,
-  apply add_haar_eq_zero_of_disjoint_translates μ _ L _
+  obtain ⟨c, cpos, cone⟩ : ∃ (c : ℝ), 0 < c ∧ c < 1 := ⟨1/2, by norm_num, by norm_num⟩,
+  have A : bounded (range (λ (n : ℕ), (c ^ n) • x)),
+  { have : tendsto (λ (n : ℕ), (c ^ n) • x) at_top (𝓝 ((0 : ℝ) • x)) :=
+      (tendsto_pow_at_top_nhds_0_of_lt_1 cpos.le cone).smul_const x,
+    exact bounded_range_of_tendsto _ this },
+  apply add_haar_eq_zero_of_disjoint_translates μ _ A _
     (submodule.closed_of_finite_dimensional s).measurable_set,
   assume m n hmn,
   simp only [function.on_fun, image_add_left, singleton_add, disjoint_left, mem_preimage,
@@ -203,10 +249,12 @@ begin
   have A : (c ^ n - c ^ m) • x ∈ s,
   { convert s.sub_mem hym hyn,
     simp only [sub_smul, neg_sub_neg, add_sub_add_right_eq_sub] },
-  have : c ^ n ≠ c ^ m,
-  { apply one_div_pow_strict_mono,
-
-  }
+  have H : c ^ n - c ^ m ≠ 0,
+    by simpa only [sub_eq_zero, ne.def] using (strict_anti_pow cpos cone).injective.ne hmn.symm,
+  have : x ∈ s,
+  { convert s.smul_mem (c ^ n - c ^ m)⁻¹ A,
+    rw [smul_smul, inv_mul_cancel H, one_smul] },
+  exact hx this
 end
 
 #exit

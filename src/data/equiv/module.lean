@@ -34,7 +34,7 @@ linear equiv, linear equivalences, linear isomorphism, linear isomorphic
 -/
 
 open function
-open_locale big_operators
+open_locale big_operators pointwise
 
 universes u u' v w x y z
 variables {R : Type*} {R₁ : Type*} {R₂ : Type*} {R₃ : Type*}
@@ -288,12 +288,10 @@ equiv.bijective ⟨(symm : (M ≃ₛₗ[σ] M₂) →
   M₂ ≃ₛₗ[σ'] M) = e.symm :=
 symm_bijective.injective $ ext $ λ x, rfl
 
-include σ'
 @[simp] theorem symm_mk (f h₁ h₂ h₃ h₄) :
   (⟨e, h₁, h₂, f, h₃, h₄⟩ : M ≃ₛₗ[σ] M₂).symm =
   { to_fun := f, inv_fun := e,
     ..(⟨e, h₁, h₂, f, h₃, h₄⟩ : M ≃ₛₗ[σ] M₂).symm } := rfl
-omit σ'
 
 @[simp] lemma coe_symm_mk [module R M] [module R M₂]
   {to_fun inv_fun map_add map_smul left_inv right_inv} :
@@ -304,10 +302,19 @@ protected lemma bijective : function.bijective e := e.to_equiv.bijective
 protected lemma injective : function.injective e := e.to_equiv.injective
 protected lemma surjective : function.surjective e := e.to_equiv.surjective
 
-include σ'
 protected lemma image_eq_preimage (s : set M) : e '' s = e.symm ⁻¹' s :=
 e.to_equiv.image_eq_preimage s
-omit σ'
+
+protected lemma image_symm_eq_preimage (s : set M₂) : e.symm '' s = e ⁻¹' s :=
+e.to_equiv.symm.image_eq_preimage s
+
+@[simp] lemma image_smul_set (c : R) (s : set M) :
+  e '' (c • s) = (σ c) • e '' s :=
+linear_map.image_smul_setₛₗ e.to_linear_map c s
+
+@[simp] lemma preimage_smul_set (c : S) (s : set M₂) :
+  e ⁻¹' (c • s) = σ' c • e ⁻¹' s :=
+by rw [← linear_equiv.image_symm_eq_preimage, ← linear_equiv.image_symm_eq_preimage, image_smul_set]
 
 end
 

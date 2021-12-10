@@ -215,7 +215,7 @@ This definition implies the same equality for any (not necessarily measurable) s
 (inner_regular : inner_regular μ is_compact is_open)
 
 /-- A measure `μ` is weakly regular if
-  - it is outer regular: `μ(A) = inf { μ(U) | A ⊆ U open }` for `A` measurable;
+  - it is outer regular: `μ(A) = inf {μ(U) | A ⊆ U open}` for `A` measurable;
   - it is inner regular for open sets, using closed sets:
     `μ(U) = sup {μ(F) | F ⊆ U compact}` for `U` open. -/
 @[protect_proj] class weakly_regular (μ : measure α) extends outer_regular μ : Prop :=
@@ -457,6 +457,20 @@ namespace regular
 
 instance zero : regular (0 : measure α) :=
 ⟨λ K hK, ennreal.coe_lt_top, λ U hU r hr, ⟨∅, empty_subset _, is_compact_empty, hr⟩⟩
+
+/-- A compact subset has finite measure for a regular measure. -/
+lemma _root_.is_compact.measure_lt_top_of_regular [regular μ] ⦃K : set α⦄ (hK : is_compact K) :
+  μ K < ∞ :=
+regular.lt_top_of_is_compact hK
+
+/-- A bounded subset has finite measure for a regular measure, in a proper space. -/
+lemma _root_.metric.bounded.measure_lt_top_of_regular {α : Type*}
+  {m0 : measurable_space α} {μ : measure α} [pseudo_metric_space α] [proper_space α] [regular μ]
+  ⦃s : set α⦄ (hs : metric.bounded s) :
+  μ s < ∞ :=
+calc μ s ≤ μ (closure s) : measure_mono subset_closure
+... < ∞ : is_compact.measure_lt_top_of_regular $
+            metric.is_compact_of_is_closed_bounded is_closed_closure hs.closure
 
 /-- If `μ` is a regular measure, then any open set can be approximated by a compact subset. -/
 lemma _root_.is_open.exists_lt_is_compact [regular μ] ⦃U : set α⦄ (hU : is_open U)
