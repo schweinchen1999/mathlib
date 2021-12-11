@@ -1437,11 +1437,11 @@ by rw [e.symm.image_eq_preimage, e.symm_symm]
 
 @[simp] lemma image_smul_setₛₗ (e : M₁ ≃SL[σ₁₂] M₂) (c : R₁) (s : set M₁) :
   e '' (c • s) = (σ₁₂ c) • e '' s :=
-e.to_linear_equiv.image_smul_set c s
+e.to_linear_equiv.image_smul_setₛₗ c s
 
 @[simp] lemma preimage_smul_setₛₗ (e : M₁ ≃SL[σ₁₂] M₂) (c : R₂) (s : set M₂) :
   e ⁻¹' (c • s) = σ₂₁ c • e ⁻¹' s :=
-e.to_linear_equiv.preimage_smul_set c s
+e.to_linear_equiv.preimage_smul_setₛₗ c s
 omit σ₂₁
 
 @[simp] lemma image_smul_set (e : M₁ ≃L[R₁] M'₁) (c : R₁) (s : set M₁) :
@@ -1451,8 +1451,6 @@ e.to_linear_equiv.image_smul_set c s
 @[simp] lemma preimage_smul_set (e : M₁ ≃L[R₁] M'₁) (c : R₁) (s : set M'₁) :
   e ⁻¹' (c • s) = c • e ⁻¹' s :=
 e.to_linear_equiv.preimage_smul_set c s
-
-
 
 /-- Create a `continuous_linear_equiv` from two `continuous_linear_map`s that are
 inverse of each other. -/
