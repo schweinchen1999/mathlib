@@ -1172,10 +1172,11 @@ variables {R₁ : Type*} {R₂ : Type*} {R₃ : Type*} [semiring R₁] [semiring
 {σ₁₃ : R₁ →+* R₃} {σ₃₁ : R₃ →+* R₁} [ring_hom_inv_pair σ₁₃ σ₃₁] [ring_hom_inv_pair σ₃₁ σ₁₃]
 [ring_hom_comp_triple σ₁₂ σ₂₃ σ₁₃] [ring_hom_comp_triple σ₃₂ σ₂₁ σ₃₁]
 {M₁ : Type*} [topological_space M₁] [add_comm_monoid M₁]
+{M'₁ : Type*} [topological_space M'₁] [add_comm_monoid M'₁]
 {M₂ : Type*} [topological_space M₂] [add_comm_monoid M₂]
 {M₃ : Type*} [topological_space M₃] [add_comm_monoid M₃]
 {M₄ : Type*} [topological_space M₄] [add_comm_monoid M₄]
-[module R₁ M₁] [module R₂ M₂] [module R₃ M₃]
+[module R₁ M₁] [module R₁ M'₁] [module R₂ M₂] [module R₃ M₃]
 
 include σ₂₁
 /-- A continuous linear equivalence induces a continuous linear map. -/
@@ -1434,14 +1435,24 @@ by rw [e.symm.image_eq_preimage, e.symm_symm]
 @[simp] protected lemma preimage_symm_preimage (e : M₁ ≃SL[σ₁₂] M₂) (s : set M₁) :
   e ⁻¹' (e.symm ⁻¹' s) = s := e.symm.symm_preimage_preimage s
 
-@[simp] lemma image_smul_set (e : M₁ ≃SL[σ₁₂] M₂) (c : R₁) (s : set M₁) :
+@[simp] lemma image_smul_setₛₗ (e : M₁ ≃SL[σ₁₂] M₂) (c : R₁) (s : set M₁) :
   e '' (c • s) = (σ₁₂ c) • e '' s :=
 e.to_linear_equiv.image_smul_set c s
 
-@[simp] lemma preimage_smul_set (e : M₁ ≃SL[σ₁₂] M₂) (c : R₂) (s : set M₂) :
+@[simp] lemma preimage_smul_setₛₗ (e : M₁ ≃SL[σ₁₂] M₂) (c : R₂) (s : set M₂) :
   e ⁻¹' (c • s) = σ₂₁ c • e ⁻¹' s :=
 e.to_linear_equiv.preimage_smul_set c s
 omit σ₂₁
+
+@[simp] lemma image_smul_set (e : M₁ ≃L[R₁] M'₁) (c : R₁) (s : set M₁) :
+  e '' (c • s) = c • e '' s :=
+e.to_linear_equiv.image_smul_set c s
+
+@[simp] lemma preimage_smul_set (e : M₁ ≃L[R₁] M'₁) (c : R₁) (s : set M'₁) :
+  e ⁻¹' (c • s) = c • e ⁻¹' s :=
+e.to_linear_equiv.preimage_smul_set c s
+
+
 
 /-- Create a `continuous_linear_equiv` from two `continuous_linear_map`s that are
 inverse of each other. -/
