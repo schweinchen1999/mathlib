@@ -6,21 +6,8 @@ Authors: Sébastien Gouëzel
 
 import analysis.normed_space.basic
 
-
 open metric set
 open_locale pointwise topological_space
-
-
-lemma linear_map.image_smul_set {E : Type*} [add_comm_group E] {F : Type*} [add_comm_group F]
-  {𝕜 : Type*} [field 𝕜] [module 𝕜 E] [module 𝕜 F] (f : E →ₗ[𝕜] F) (c : 𝕜) (s : set E) :
-  f '' (c • s) = c • f '' s :=
-begin
-  apply subset.antisymm,
-  { rintros x ⟨y, ⟨z, zs, rfl⟩, rfl⟩,
-    exact ⟨f z, mem_image_of_mem _ zs, (f.map_smul _ _).symm ⟩ },
-  { rintros x ⟨y, ⟨z, hz, rfl⟩, rfl⟩,
-    exact (mem_image _ _ _).2 ⟨c • z, smul_mem_smul_set hz, f.map_smul _ _⟩ }
-end
 
 section semi_normed_group
 
