@@ -1746,9 +1746,6 @@ end
 @[simp] lemma bounded_union : bounded (s ∪ t) ↔ bounded s ∧ bounded t :=
 ⟨λ h, ⟨h.mono (by simp), h.mono (by simp)⟩, λ h, h.1.union h.2⟩
 
-lemma bounded.union (hs : bounded s) (ht : bounded t) : bounded (s ∪ t) :=
-bounded_union.2 ⟨hs, ht⟩
-
 /-- A finite union of bounded sets is bounded -/
 lemma bounded_bUnion {I : set β} {s : β → set α} (H : finite I) :
   bounded (⋃i∈I, s i) ↔ ∀i ∈ I, bounded (s i) :=
