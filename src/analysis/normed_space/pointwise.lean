@@ -39,8 +39,16 @@ end
   {x} + ball y r = ball (x + y) r :=
 by simp only [preimage_add_ball, image_add_left, singleton_add, sub_neg_eq_add, add_comm y x]
 
-lemma singleton_add_ball_zero {E : Type*} [normed_group E] (x : E) (r : ℝ) :
+lemma singleton_add_ball_zero (x : E) (r : ℝ) :
   {x} + ball 0 r = ball x r :=
+by simp
+
+@[simp] lemma singleton_add_closed_ball (x y : E) (r : ℝ) :
+  {x} + closed_ball y r = closed_ball (x + y) r :=
+by simp only [add_comm y x, preimage_add_closed_ball, image_add_left, singleton_add, sub_neg_eq_add]
+
+lemma singleton_add_closed_ball_zero (x : E) (r : ℝ) :
+  {x} + closed_ball 0 r = closed_ball x r :=
 by simp
 
 end semi_normed_group
