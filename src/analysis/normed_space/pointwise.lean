@@ -6,6 +6,14 @@ Authors: Sébastien Gouëzel
 
 import analysis.normed_space.basic
 
+/-!
+# Properties of pointwise addition and scalar multiplication of sets in normed spaces.
+
+We explore the relationships between pointwise addition and scalar multiplication of sets in
+vector spaces, and the norm. Notably, we express arbitrary balls as rescaling of other balls,
+and we show that the sum or multiplication of bounded sets remain bounded.
+-/
+
 open metric set
 open_locale pointwise topological_space
 
@@ -36,7 +44,6 @@ lemma singleton_add_ball_zero {E : Type*} [normed_group E] (x : E) (r : ℝ) :
 by simp
 
 end semi_normed_group
-
 
 section semi_normed_space
 
