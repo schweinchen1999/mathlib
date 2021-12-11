@@ -1,5 +1,6 @@
 import analysis.calculus.mean_value
 import measure_theory.measure.haar_lebesgue
+import analysis.normed_space.pointwise
 
 
 variables {E : Type*} [normed_group E] [normed_space ℝ E]
