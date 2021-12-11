@@ -337,10 +337,7 @@ is_unit_of_mul_eq_one _ _ f.det_mul_det_symm
 /-- The determinant of `f.symm` is the inverse of that of `f` when `f` is a linear equiv. -/
 lemma linear_equiv.det_symm {𝕜 : Type*} [field 𝕜] [module 𝕜 M]
   (f : M ≃ₗ[𝕜] M) : (f.symm : M →ₗ[𝕜] M).det = (f : M →ₗ[𝕜] M).det ⁻¹ :=
-begin
-  field_simp [is_unit.ne_zero f.is_unit_det'],
-  simpa only [mul_comm] using f.det_mul_det_symm
-end
+by field_simp [is_unit.ne_zero f.is_unit_det']
 
 /-- Builds a linear equivalence from a linear map whose determinant in some bases is a unit. -/
 @[simps]
