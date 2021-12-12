@@ -49,6 +49,7 @@ class normed_lattice_add_comm_group (α : Type*)
 lemma solid {α : Type*} [normed_lattice_add_comm_group α] {a b : α} (h : |a| ≤ |b|) : ∥a∥ ≤ ∥b∥ :=
 normed_lattice_add_comm_group.solid a b h
 
+@[priority 100] -- see Note [lower instance priority]
 instance normed_lattice_add_comm_group.to_normed_group {α : Type*}
   [h : normed_lattice_add_comm_group α] : normed_group α :=
 { dist_eq := h.dist_eq, }

@@ -235,7 +235,7 @@ def lattice_ordered_comm_group_to_distrib_lattice (α : Type u)
 -- 3rd lecture
 -- |a ⊔ c - (b ⊔ c)| + |a ⊓ c-b ⊓ c| = |a - b|
 @[to_additive]
-theorem abs_div_sup_mul_abs_div_inf [covariant_class α α (*) (≤)] (a b c : α) :
+theorem abs_div_sup_mul_abs_div_inf (a b c : α) :
   |(a ⊔ c) / (b ⊔ c)| * |(a ⊓ c) / (b ⊓ c)| = |a / b| :=
 begin
   letI : distrib_lattice α := lattice_ordered_comm_group_to_distrib_lattice α,
