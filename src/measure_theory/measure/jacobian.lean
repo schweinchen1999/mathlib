@@ -2,11 +2,20 @@ import analysis.calculus.mean_value
 import measure_theory.measure.haar_lebesgue
 import analysis.normed_space.pointwise
 
+/-!
+# Change of variables under diffeomorphisms
+
+The goal of this file is to prove the change of variables formula for local diffeomorphisms in
+higher dimension. For now, there is only the preliminary fact that, locally, the volume of balls
+is scaled according to the jacobian of the map, in
+`tendsto_add_haar_preimage_closed_ball_div_add_haar_closed_ball`
+
+-/
 
 variables {E : Type*} [normed_group E] [normed_space ℝ E]
           {F : Type*} [normed_group F] [normed_space ℝ F]
 
-open metric set asymptotics
+open metric set asymptotics filter measure_theory measure_theory.measure finite_dimensional
 open_locale pointwise topological_space
 
 /-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
@@ -67,8 +76,29 @@ begin
   ... = ε * r : by { field_simp [Rpos.ne'], ring }
 end
 
+/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
+`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
+Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the
+intersection of the former with an arbitrary neighborhood of `x`, for small enough `r`. -/
+lemma eventually_smul_preimage_fderiv_subset_inter_preimage
+  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
+  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
+  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) {u : set E} (hu : u ∈ 𝓝 x) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u ∩ f ⁻¹' ({f x} + r • s) :=
+begin
+  have A : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=
+    eventually_smul_preimage_fderiv_subset_preimage hf s_conv hs h's ht,
+  have B : ∀ᶠ r in 𝓝 (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u :=
+    eventually_singleton_add_smul_subset ((f'.antilipschitz.bounded_preimage h's).smul _) hu,
+  filter_upwards [A, nhds_within_le_nhds B],
+  assume r hr h'r,
+  exact subset_inter h'r hr
+end
 
-
+/-- Consider a map `f` with a derivative `f'` at a point `x`. For small enough `r`, the image under
+`f` of the ball `closed_ball x r` resembles its under image `f'`. Here, we show that it is
+eventually contained in the `ε r` thickening of `f' '' (closed_ball 0 r)`, for any fixed
+positive `ε`. -/
 lemma eventually_image_closed_ball_subset_image_closed_ball_fderiv
   {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
   ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
@@ -90,6 +120,12 @@ begin
     simpa only [mem_closed_ball_iff_norm, sub_zero] using hz }
 end
 
+
+/-- Consider a map `f` with a derivative `f'` at a point `x`. For small enough `r`, the image under
+`f` of the ball `closed_ball x r` resembles its under image `f'`. Here, we show that its rescaling
+by `r⁻¹` is eventually contained in the `ε` thickening of `f' '' (closed_ball 0 1)`, for any fixed
+positive `ε`. This form is handy for measure computations as the set on the right hand side does
+not depend on `r`. -/
 lemma eventually_smul_image_closed_ball_subset_image_closed_ball_fderiv
   {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
   ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
@@ -112,73 +148,15 @@ begin
   end
 end
 
-/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
-`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
-Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the
-intersection of the former with an arbitrary neighborhood of `x`, for small enough `r`. -/
-lemma eventually_smul_preimage_fderiv_subset_inter_preimage
-  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
-  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
-  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) {u : set E} (hu : u ∈ 𝓝 x) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u ∩ f ⁻¹' ({f x} + r • s) :=
-begin
-  have A : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=
-    eventually_smul_preimage_fderiv_subset_preimage hf s_conv hs h's ht,
-  have B : ∀ᶠ r in 𝓝 (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u :=
-    eventually_singleton_add_smul_subset ((f'.antilipschitz.bounded_preimage h's).smul _) hu,
-  filter_upwards [A, nhds_within_le_nhds B],
-  assume r hr h'r,
-  exact subset_inter h'r hr
-end
-
-/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
-`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
-Here we prove that the rescaling of the former by a fixed factor `t < 1` is contained in the latter,
-for small enough `r`, if `f` is a local homeomorphism. -/
-lemma eventually_preimage_smul_subset_preimage_fderiv
-  {f : local_homeomorph E F} {x : E} {f' : E ≃L[ℝ] F}
-  (hx : x ∈ f.source) (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
-  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
-  {t : ℝ} (ht : 1 < t) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f.source ∩ f ⁻¹' ({f x} + r • s) ⊆ {x} + r • t • f' ⁻¹' (s) :=
-begin
-  have htinv : t⁻¹ ∈ Ico (0 : ℝ) 1 := ⟨inv_nonneg.2 (zero_lt_one.trans ht).le, inv_lt_one ht⟩,
-  have h'f : has_fderiv_at f.symm (f'.symm : F →L[ℝ] E) (f x) := f.has_fderiv_at_symm' hx hf,
-  let s' := t • f' ⁻¹' s,
-  have s'_conv : convex ℝ s', by { apply convex.smul, exact s_conv.linear_preimage f' },
-  have hs' : s' ∈ 𝓝 (0 : E),
-  { rw set_smul_mem_nhds_zero_iff _ (zero_lt_one.trans ht).ne',
-    apply f'.continuous.continuous_at,
-    simpa only [continuous_linear_equiv.map_zero] using hs },
-  have h's' : bounded s' := (f'.antilipschitz.bounded_preimage h's).smul _,
-  filter_upwards [eventually_smul_preimage_fderiv_subset_preimage h'f s'_conv hs' h's' htinv],
-  assume r hr,
-  simp only [f'.symm_preimage_preimage, s', hx, local_homeomorph.left_inv, mul_one, smul_smul,
-    continuous_linear_equiv.preimage_smul_set, inv_mul_cancel (zero_lt_one.trans ht).ne'] at hr,
-  rw [← smul_smul] at hr,
-  calc f.source ∩ f ⁻¹' ({f x} + r • s)
-    ⊆ f.source ∩ f ⁻¹' ((f.symm) ⁻¹' ({x} + r • t • ⇑f' ⁻¹' s)) :
-      inter_subset_inter_right _ (preimage_mono hr)
-    ... = f.source ∩ ({x} + r • t • ⇑f' ⁻¹' s) : f.source_inter_preimage_inv_preimage _
-    ... ⊆ {x} + r • t • ⇑f' ⁻¹' s : inter_subset_right _ _
-end
-
-
-.
-
-open filter measure_theory measure_theory.measure finite_dimensional
-
 variables [measurable_space E] [finite_dimensional ℝ E] [borel_space E]
   (μ : measure E) [is_add_haar_measure μ]
 
 
-lemma tendsto_mu_add_ball {s : set E} (hs : is_compact s) :
+lemma tendsto_add_haar_cthickening {s : set E} (hs : is_compact s) :
   tendsto (λ r, μ (closed_ball 0 r + s)) (𝓝 0) (𝓝 (μ s)) :=
 sorry
 
-set_option profiler true
-
-lemma tendsto_add_haar_preimage_ball_div_add_haar_ball
+lemma tendsto_add_haar_preimage_closed_ball_div_add_haar_closed_ball
   (f : local_homeomorph E E) (g : E →L[ℝ] E) (y : E) (y_mem : y ∈ f.target)
   (h : has_fderiv_at f.symm g y) :
   tendsto (λ r, μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r)) (𝓝[Ioi (0 : ℝ)] 0)
@@ -194,7 +172,7 @@ begin
       μ (closed_ball 0 ε + g '' (closed_ball 0 1)) < m * μ (closed_ball 0 1) ∧ 0 < ε,
     { have L1 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
         (𝓝 0) (𝓝 (μ (g '' (closed_ball 0 1)))),
-      { apply tendsto_mu_add_ball,
+      { apply tendsto_add_haar_cthickening,
         exact (proper_space.is_compact_closed_ball _ _).image g.continuous },
       have L2 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
         (𝓝 0) (𝓝 (d * μ (closed_ball 0 1))),
