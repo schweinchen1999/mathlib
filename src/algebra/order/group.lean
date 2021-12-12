@@ -1225,8 +1225,6 @@ lemma abs_choice (x : α) : |x| = x ∨ |x| = -x := max_choice _ _
 
 lemma le_abs : a ≤ |b| ↔ a ≤ b ∨ a ≤ -b := le_max_iff
 
-lemma le_abs' : a ≤ |b| ↔ b ≤ -a ∨ a ≤ b := by rw [le_abs, or.comm, le_neg]
-
 lemma lt_abs : a < |b| ↔ a < b ∨ a < -b := lt_max_iff
 
 lemma abs_by_cases (P : α → Prop) {a : α} (h1 : P a) (h2 : P (-a)) : P (|a|) :=
@@ -1269,6 +1267,9 @@ end lattice_comm_group
 
 section add_group
 variables [linear_ordered_add_comm_group α] {a b c : α}
+
+lemma le_abs' : a ≤ |b| ↔ b ≤ -a ∨ a ≤ b :=
+by rw [le_abs, or.comm, le_neg]
 
 lemma eq_or_eq_neg_of_abs_eq {a b : α} (h : |a| = b) : a = b ∨ a = -b :=
 by simpa only [← h, eq_comm, eq_neg_iff_eq_neg] using abs_choice a
