@@ -159,19 +159,16 @@ variables [measurable_space E] [finite_dimensional ℝ E] [borel_space E]
 open_locale ennreal
 
 lemma tendsto_add_haar_cthickening {R : ℝ} (Rpos : 0 < R) {s : set E}
-  (hs : is_closed s) (h's : μ (cthickening R s) ≠ ∞) :
-  tendsto (λ r, μ (cthickening r s)) (𝓝 0) (𝓝 (μ s)) :=
+  (hs : μ (cthickening R s) ≠ ∞) :
+  tendsto (λ r, μ (cthickening r s)) (𝓝[Ioi 0] 0) (𝓝 (μ (closure s))) :=
 begin
-  obtain ⟨u, u_anti, u_pos, u_lim⟩ :
-    ∃ (u : ℕ → ℝ), strict_anti u ∧ (∀ (n : ℕ), 0 < u n) ∧ tendsto u at_top (𝓝 0) :=
-      exists_seq_strict_anti_tendsto (0 : ℝ),
-  have : s = ⋂ n, cthickening (u n) s,
-  { apply subset.antisymm,
-    apply subset_Inter_iff.2 (λ n, _),
-    apply closure_subset_cthickening
-
-  }
-
+  rw closure_eq_Inter_cthickening,
+  apply tendsto_measure_Inter_pos,
+  { assume r hr,
+    exact is_closed_cthickening.measurable_set },
+  { assume i j ipos ij,
+    exact cthickening_mono ij _ },
+  { exact ⟨R, Rpos, hs⟩ }
 end
 
 

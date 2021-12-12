@@ -1317,6 +1317,31 @@ lemma measurable.nndist {f g : β → α} (hf : measurable f) (hg : measurable g
   measurable (λ b, nndist (f b) (g b)) :=
 (@continuous_nndist α _).measurable2 hf hg
 
+lemma tendsto_measure_cthickening {μ : measure α} {s : set α}
+  (hs : ∃ R > 0, μ (cthickening R s) ≠ ∞) :
+  tendsto (λ r, μ (cthickening r s)) (𝓝 0) (𝓝 (μ (closure s))) :=
+begin
+  have A : tendsto (λ r, μ (cthickening r s)) (𝓝[Ioi 0] 0) (𝓝 (μ (closure s))),
+  { rw closure_eq_Inter_cthickening,
+    exact tendsto_measure_Inter_pos (λ r hr, is_closed_cthickening.measurable_set)
+      (λ i j ipos ij, cthickening_mono ij _) hs },
+  have B : tendsto (λ r, μ (cthickening r s)) (𝓝[Iic 0] 0) (𝓝 (μ (closure s))),
+  { apply tendsto.congr' _ tendsto_const_nhds,
+    filter_upwards [self_mem_nhds_within],
+    assume r hr,
+    rw cthickening_of_nonpos hr },
+  convert B.sup A,
+  simp [← nhds_within_union, nhds_within_univ],
+end
+
+lemma tendsto_measure_cthickening_of_is_closed {μ : measure α} {s : set α}
+  (hs : ∃ R > 0, μ (cthickening R s) ≠ ∞) (h's : is_closed s) :
+  tendsto (λ r, μ (cthickening r s)) (𝓝 0) (𝓝 (μ s)) :=
+begin
+  convert tendsto_measure_cthickening hs,
+  exact h's.closure_eq.symm
+end
+
 end metric_space
 
 section emetric_space
