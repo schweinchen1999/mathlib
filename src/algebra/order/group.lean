@@ -1210,6 +1210,11 @@ lemma mabs_div_comm (a b : α) : |a / b| = |b / a| :=
 calc  |a / b| = |(b / a)⁻¹| : congr_arg _ (inv_div' b a).symm
           ... = |b / a|      : mabs_inv (b / a)
 
+--todo move this
+@[to_additive]
+lemma neg_eq_inv_inf_one (a : α) : a⁻ = (a ⊓ 1)⁻¹ :=
+by rw [neg_part_eq_inv_sup_one, ← inv_inj, ← inv_inf_inv, inv_inv, inv_inv, one_inv]
+
 end group
 
 end without_covariant
