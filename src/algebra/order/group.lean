@@ -1100,7 +1100,7 @@ instance has_one_lattice_has_pos_part [has_one α] : has_pos_part (α) := ⟨λ 
 instance has_one_lattice_has_neg_part [has_inv α] [has_one α] :
   has_neg_part (α) := ⟨λ a, a⁻¹ ⊔ 1⟩
 
-@[to_additive abs_eq_sup_neg]
+@[to_additive]
 lemma mabs_eq_sup_inv [has_inv α] (a : α) : |a| = a ⊔ a⁻¹ := rfl
 
 section pos_part
@@ -1139,20 +1139,20 @@ end pos_part
 section has_inv
 variables [has_inv α] {a b: α}
 
-@[to_additive abs_le']
+@[to_additive]
 lemma mabs_le' : |a| ≤ b ↔ a ≤ b ∧ a⁻¹ ≤ b := sup_le_iff
 
-@[to_additive abs_le_iff]
+@[to_additive]
 lemma mabs_le_iff : |a| ≤ b ↔ a⁻¹ ≤ b ∧ a ≤ b :=
 by rw [mabs_le', and.comm]
 
-@[to_additive le_abs_self]
+@[to_additive]
 lemma le_mabs_self (a : α) : a ≤ |a| := le_sup_left
 
-@[to_additive neg_le_abs_self]
+@[to_additive]
 lemma inv_le_mabs_self (a : α) : a⁻¹ ≤ |a| := le_sup_right
 
-@[to_additive abs_le_abs]
+@[to_additive]
 theorem mabs_le_mabs (h₀ : a ≤ b) (h₁ : a⁻¹ ≤ b) : |a| ≤ |b| :=
 (mabs_le'.2 ⟨h₀, h₁⟩).trans (le_mabs_self b)
 
@@ -1193,7 +1193,7 @@ end has_inv
 section group
 variables [group α]
 
-@[simp, to_additive abs_zero]
+@[simp, to_additive]
 lemma mabs_one : |(1 : α)| = 1 :=
 by rw [mabs_eq_sup_inv, one_inv, sup_idem]
 
@@ -1201,10 +1201,11 @@ by rw [mabs_eq_sup_inv, one_inv, sup_idem]
 lemma neg_part_one : (1 : α)⁻ = 1 :=
 by rw [neg_part_eq_inv_sup_one, one_inv, sup_idem]
 
-@[simp, to_additive abs_neg] lemma mabs_inv (a : α) : |a⁻¹| = |a| :=
+@[simp, to_additive]
+lemma mabs_inv (a : α) : |a⁻¹| = |a| :=
 by rw [mabs_eq_sup_inv, sup_comm, inv_inv, mabs_eq_sup_inv]
 
-@[to_additive abs_sub_comm]
+@[to_additive]
 lemma mabs_div_comm (a b : α) : |a / b| = |b / a| :=
 calc  |a / b| = |(b / a)⁻¹| : congr_arg _ (inv_div' b a).symm
           ... = |b / a|      : mabs_inv (b / a)
@@ -1217,19 +1218,19 @@ end without_covariant
 section has_inv_linear
 variables [has_inv α] [linear_order α] {a b: α}
 
-@[to_additive abs_eq_max_neg]
+@[to_additive]
 lemma mabs_eq_max_inv : abs a = max a a⁻¹ := rfl
 
-@[to_additive abs_choice]
+@[to_additive]
 lemma mabs_choice (x : α) : |x| = x ∨ |x| = x⁻¹ := max_choice _ _
 
-@[to_additive le_abs]
+@[to_additive]
 lemma le_mabs : a ≤ |b| ↔ a ≤ b ∨ a ≤ b⁻¹ := le_max_iff
 
-@[to_additive lt_abs]
+@[to_additive]
 lemma lt_mabs : a < |b| ↔ a < b ∨ a < b⁻¹ := lt_max_iff
 
-@[to_additive abs_by_cases]
+@[to_additive]
 lemma mabs_by_cases (P : α → Prop) {a : α} (h1 : P a) (h2 : P a⁻¹) : P (|a|) :=
 sup_ind _ _ h1 h2
 
@@ -1249,23 +1250,23 @@ by { rw neg_part_eq_one_iff', exact inv_le_one', }
 lemma neg_part_of_one_le (a : α) (h : 1 ≤ a) : a⁻ = 1 :=
 neg_part_eq_one_iff.mpr h
 
-@[to_additive abs_of_nonneg]
+@[to_additive]
 lemma mabs_of_one_le (h : 1 ≤ a) : |a| = a :=
 sup_eq_left.mpr (left.inv_le_self h)
 
-@[to_additive abs_of_pos]
+@[to_additive]
 lemma mabs_of_one_lt (h : 1 < a) : |a| = a :=
 mabs_of_one_le h.le
 
-@[to_additive abs_of_nonpos]
+@[to_additive]
 lemma mabs_of_le_one (h : a ≤ 1) : |a| = a⁻¹ :=
 sup_eq_right.mpr $ (right.self_le_inv h)
 
-@[to_additive abs_of_neg]
+@[to_additive]
 lemma mabs_of_lt_one (h : a < 1) : |a| = a⁻¹ :=
 mabs_of_le_one h.le
 
-@[to_additive abs_le]
+@[to_additive]
 lemma mabs_le : |a| ≤ b ↔ b⁻¹ ≤ a ∧ a ≤ b :=
 by rw [mabs_le_iff, inv_le']
 
@@ -1275,15 +1276,15 @@ end lattice_comm_group
 section linear_ordered_comm_group
 variables [linear_ordered_comm_group α] {a b c : α}
 
-@[to_additive le_abs']
+@[to_additive]
 lemma le_mabs' : a ≤ |b| ↔ b ≤ a⁻¹ ∨ a ≤ b :=
 by rw [le_mabs, or.comm, le_inv']
 
-@[to_additive eq_or_eq_neg_of_abs_eq]
+@[to_additive]
 lemma eq_or_eq_inv_of_mabs_eq {a b : α} (h : |a| = b) : a = b ∨ a = b⁻¹ :=
 by simpa only [← h, eq_comm, eq_inv_iff_eq_inv] using mabs_choice a
 
-@[to_additive abs_eq_abs]
+@[to_additive]
 lemma mabs_eq_mabs {a b : α} : |a| = |b| ↔ a = b ∨ a = b⁻¹ :=
 begin
   refine ⟨λ h, _, λ h, _⟩,
@@ -1307,7 +1308,7 @@ lemma one_lt_mabs_of_one_lt (h : 1 < a) : 1 < |a| := one_lt_mabs.2 h.ne.symm
 @[to_additive abs_pos_of_neg]
 lemma one_lt_mabs_of_lt_one (h : a < 1) : 1 < |a| := one_lt_mabs.2 h.ne
 
-@[to_additive neg_abs_le_self]
+@[to_additive]
 lemma inv_mabs_le_self (a : α) : |a|⁻¹ ≤ a :=
 begin
   cases le_total 1 a with h h,
@@ -1323,11 +1324,11 @@ lemma one_le_mabs (a : α) : 1 ≤ |a| :=
 (le_total 1 a).elim (λ h, h.trans (le_mabs_self a))
   (λ h, (one_le_inv'.2 h).trans $ inv_le_mabs_self a)
 
-@[simp, to_additive abs_abs]
+@[simp, to_additive]
 lemma mabs_mabs (a : α) : | |a| | = |a| :=
 mabs_of_one_le $ one_le_mabs a
 
-@[simp, to_additive abs_eq_zero]
+@[simp, to_additive]
 lemma mabs_eq_one : |a| = 1 ↔ a = 1 :=
 decidable.not_iff_not.1 $ ne_comm.trans $ (one_le_mabs a).lt_iff_ne.symm.trans one_lt_mabs
 
@@ -1335,17 +1336,17 @@ decidable.not_iff_not.1 $ ne_comm.trans $ (one_le_mabs a).lt_iff_ne.symm.trans o
 lemma mabs_lt_one_iff {a : α} : |a| ≤ 1 ↔ a = 1 :=
 (one_le_mabs a).le_iff_eq.trans mabs_eq_one
 
-@[to_additive abs_lt]
+@[to_additive]
 lemma mabs_lt : |a| < b ↔ b⁻¹ < a ∧ a < b :=
 max_lt_iff.trans $ and.comm.trans $ by rw [inv_lt']
 
-@[to_additive neg_lt_of_abs_lt]
+@[to_additive]
 lemma inv_lt_of_mabs_lt (h : |a| < b) : b⁻¹ < a := (mabs_lt.mp h).1
 
-@[to_additive lt_of_abs_lt]
+@[to_additive]
 lemma lt_of_mabs_lt (h : |a| < b) : a < b := (mabs_lt.mp h).2
 
-@[to_additive max_sub_min_eq_abs']
+@[to_additive]
 lemma max_div_min_eq_mabs' (a b : α) : max a b / min a b = |a / b| :=
 begin
   cases le_total a b with ab ba,
@@ -1353,7 +1354,7 @@ begin
   { rw [max_eq_left ba, min_eq_right ba, mabs_of_one_le], rwa one_le_div' }
 end
 
-@[to_additive max_sub_min_eq_abs]
+@[to_additive]
 lemma max_div_min_eq_mabs (a b : α) : max a b / min a b = |b / a| :=
 by { rw mabs_div_comm, exact max_div_min_eq_mabs' _ _ }
 

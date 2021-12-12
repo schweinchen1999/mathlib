@@ -262,7 +262,7 @@ lemma neg_of_le_one (a : α) (h : a ≤ 1) : a⁻ = a⁻¹ :=
 by { refine neg_part_of_one_le_inv _ _, rw one_le_inv', exact h, }
 
 -- 0 ≤ a implies |a| = a
-@[to_additive abs_of_nonneg]
+@[to_additive]
 lemma mabs_of_one_le (a : α) (h : 1 ≤ a) : |a| = a :=
 begin
   unfold has_abs.abs,
@@ -275,11 +275,11 @@ end
 /--
 The unary operation of taking the absolute value is idempotent.
 -/
-@[to_additive abs_abs, simp]
+@[simp, to_additive abs_abs]
 lemma m_abs_abs (a : α) : | |a| | = |a| :=
 mabs_of_one_le _ (one_le_abs _)
 
-@[to_additive abs_sup_sub_sup_le_abs]
+@[to_additive]
 lemma mabs_sup_div_sup_le_mabs (a b c : α) :
   |(a ⊔ c) / (b ⊔ c)| ≤ |a / b| :=
 begin
@@ -288,7 +288,7 @@ begin
   { exact one_le_abs _, },
 end
 
-@[to_additive abs_inf_sub_inf_le_abs]
+@[to_additive]
 lemma mabs_inf_div_inf_le_mabs (a b c : α) :
   |(a ⊓ c) / (b ⊓ c)| ≤ |a / b| :=
 begin
@@ -309,7 +309,7 @@ sup_le (mabs_sup_div_sup_le_mabs a b c) (mabs_inf_div_inf_le_mabs a b c)
 /--
 The absolute value satisfies the triangle inequality.
 -/
-@[to_additive abs_add_le]
+@[to_additive]
 lemma mabs_mul_le (a b : α) : |a * b| ≤ |a| * |b| :=
 begin
   apply sup_le,
