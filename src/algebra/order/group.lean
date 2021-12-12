@@ -1225,6 +1225,8 @@ lemma abs_choice (x : α) : |x| = x ∨ |x| = -x := max_choice _ _
 
 lemma le_abs : a ≤ |b| ↔ a ≤ b ∨ a ≤ -b := le_max_iff
 
+lemma le_abs' : a ≤ |b| ↔ b ≤ -a ∨ a ≤ b := by rw [le_abs, or.comm, le_neg]
+
 lemma lt_abs : a < |b| ↔ a < b ∨ a < -b := lt_max_iff
 
 lemma abs_by_cases (P : α → Prop) {a : α} (h1 : P a) (h2 : P (-a)) : P (|a|) :=
