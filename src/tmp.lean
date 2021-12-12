@@ -176,16 +176,18 @@ lemma tendsto_mu_add_ball {s : set E} (hs : is_compact s) :
   tendsto (λ r, μ (closed_ball 0 r + s)) (𝓝 0) (𝓝 (μ s)) :=
 sorry
 
+set_option profiler true
+
 lemma tendsto_add_haar_preimage_ball_div_add_haar_ball
   (f : local_homeomorph E E) (g : E →L[ℝ] E) (y : E) (y_mem : y ∈ f.target)
   (h : has_fderiv_at f.symm g y) :
   tendsto (λ r, μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r)) (𝓝[Ioi (0 : ℝ)] 0)
-    (𝓝 (ennreal.of_real (abs (linear_map.det (g : E →ₗ[ℝ] E))))) :=
+    (𝓝 (ennreal.of_real (abs (g : E →ₗ[ℝ] E).det))) :=
 begin
-  let d := ennreal.of_real (abs (linear_map.det (g : E →ₗ[ℝ] E))),
+  let d := ennreal.of_real (abs (g : E →ₗ[ℝ] E).det),
   let x := f.symm y,
   have x_mem : x ∈ f.source := f.map_target y_mem,
-  have B : ∀ m, d < m → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+  have A : ∀ m, d < m → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
       μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r) < m,
   { assume m hm,
     obtain ⟨ε, hε, εpos⟩ : ∃ (ε : ℝ),
@@ -224,100 +226,36 @@ begin
     assume r hr1 hr2 rpos,
     change 0 < r at rpos,
     have I : ennreal.of_real (|(r ^ finrank ℝ E)⁻¹|) * μ (f.symm '' closed_ball y r)
-      < ennreal.of_real (|(r ^ finrank ℝ E)⁻¹|) * m * μ (closed_ball y r) := calc
-    ennreal.of_real (|(r ^ finrank ℝ E)⁻¹|) * μ (f.symm '' closed_ball y r)
-    = μ (r⁻¹ • ({-x} + ⇑(f.symm) '' closed_ball y r)) :
-      by simp only [add_haar_smul, image_add_left, inv_pow₀, add_haar_preimage_add, singleton_add]
-    ... ≤ μ (closed_ball 0 ε + ⇑g '' closed_ball 0 1) :
-      measure_mono hr1
-    ... < ennreal.of_real (|(r ^ finrank ℝ E)⁻¹|) * m * μ (closed_ball y r) : sorry,
-
-    rw [hr2, ennreal.div_lt_iff (or.inl (add_haar_closed_ball_pos μ y rpos).ne')
-          (or.inl (add_haar_closed_ball_lt_top μ y r).ne)],
-
-  }
-end
-
-#exit
-
-    have L : tendsto (λ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d) (𝓝[Ioi 1] 1)
-      (𝓝 (ennreal.of_real (1 ^ finrank ℝ E) * d)),
-    { apply ennreal.tendsto.mul_const _ (or.inr ennreal.of_real_ne_top),
-      apply ennreal.tendsto_of_real (tendsto.pow _ _),
-      exact nhds_within_le_nhds, },
-    simp only [one_pow, one_mul, ennreal.of_real_one] at L,
-    obtain ⟨t, tlim, ht⟩ : ∃ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d < m ∧
-      1 < t := (((tendsto_order.1 L).2 _ hm).and self_mem_nhds_within).exists,
-    have R1 : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-      f.source ∩ f ⁻¹' (closed_ball y r) = f.symm '' (closed_ball y r),
-    { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), closed_ball y r ⊆ f.target,
-      { apply nhds_within_le_nhds,
-        exact eventually_closed_ball_subset (f.open_target.mem_nhds y_mem) },
-      filter_upwards [this],
-      assume r hr,
-      have : f.is_image (f.source ∩ f ⁻¹' (closed_ball y r)) (closed_ball y r),
-      { apply local_homeomorph.is_image.of_preimage_eq',
-        simp only [inter_eq_right_iff_subset.mpr hr, ←inter_assoc, inter_self] },
-      simpa only [inter_eq_right_iff_subset.mpr hr, ←inter_assoc, inter_self]
-        using this.symm_image_eq.symm },
-    filter_upwards [R1, self_mem_nhds_within],
-    assume r hr1 rpos,
-    change 0 < r at rpos,
-    rw [hr1, ennreal.div_lt_iff (or.inl (add_haar_closed_ball_pos μ y rpos).ne')
-          (or.inl (add_haar_closed_ball_lt_top μ y r).ne)],
-  }
-end
-
-#exit
-    have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), μ (f.source ∩ f ⁻¹' (closed_ball y r)) ≤
-      ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E)
-        * d * μ (closed_ball 0 1),
-     { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)
-        ⊆ {x} + r • t • f' x ⁻¹' (closed_ball 0 1) :=
-          eventually_preimage_smul_subset_preimage_fderiv x_mem (h x x_mem)
-          (convex_closed_ball _ _) (closed_ball_mem_nhds _ zero_lt_one) bounded_closed_ball ht,
-      filter_upwards [this, self_mem_nhds_within],
-      assume r hr r_pos,
-      replace r_pos : 0 < r := r_pos,
-      calc
-      μ (f.source ∩ f ⁻¹' (closed_ball y r))
-      = μ (f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)) :
-        by simp only [y_mem, smul_closed_ball, zero_le_one, real.norm_eq_abs, abs_of_nonneg r_pos.le,
-          mul_one, preimage_add_closed_ball, image_add_left, local_homeomorph.right_inv, zero_add,
-          singleton_add, smul_zero, sub_neg_eq_add]
-      ... ≤ μ ({x} + r • t • ⇑(f' x) ⁻¹' closed_ball 0 1) : measure_mono hr
-      ... = ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d
-        * μ (closed_ball 0 1) : begin
-          simp only [abs_of_nonneg, r_pos.le, (zero_lt_one.trans ht).le, mul_assoc, add_haar_smul,
-            image_add_left, pow_nonneg, add_haar_preimage_add, singleton_add,
-            haar_preimage_continuous_linear_equiv, coe_coe],
-          refl,
-        end },
-    filter_upwards [this, self_mem_nhds_within],
-    assume r hr rpos,
-    replace rpos : 0 < r := rpos,
-    apply lt_of_le_of_lt (ennreal.div_le_of_le_mul _) tlim,
-    rw [add_haar_closed_ball' μ _ rpos.le],
-    convert hr using 1,
-    ring },
-end
-
-#exit
-
-
-lemma tendsto_add_haar_preimage_ball_div_add_haar_ball
-  (f : local_homeomorph E E) (f' : E → (E ≃L[ℝ] E))
-  (h : ∀ x ∈ f.source, has_fderiv_at f (f' x : E →L[ℝ] E) x)
-  (y : E) (y_mem : y ∈ f.target) :
-  tendsto (λ r, μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r)) (𝓝[Ioi (0 : ℝ)] 0)
-    (𝓝 (ennreal.of_real (abs (linear_map.det ((f' (f.symm y)).symm : E →ₗ[ℝ] E))))) :=
-begin
-  let d := ennreal.of_real (abs (linear_map.det ((f' (f.symm y)).symm : E →ₗ[ℝ] E))),
-  let x := f.symm y,
-  have x_mem : x ∈ f.source := f.map_target y_mem,
-  have A : ∀ l, l < d → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+    < ennreal.of_real (|(r ^ finrank ℝ E)⁻¹|) * m * μ (closed_ball y r) := calc
+      ennreal.of_real (|(r ^ finrank ℝ E)⁻¹|) * μ (f.symm '' closed_ball y r)
+      = μ (r⁻¹ • ({-x} + ⇑(f.symm) '' closed_ball y r)) :
+        by simp only [add_haar_smul, image_add_left, inv_pow₀, add_haar_preimage_add, singleton_add]
+      ... ≤ μ (closed_ball 0 ε + ⇑g '' closed_ball 0 1) :
+        measure_mono hr1
+      ... < m * μ (closed_ball 0 1) : hε
+      ... = ennreal.of_real (|(r ^ finrank ℝ E)⁻¹|) * m * μ (closed_ball y r) :
+        by rw [add_haar_closed_ball' μ y rpos.le, mul_comm _ m, mul_assoc, ← mul_assoc _ _ (μ _),
+          ← ennreal.of_real_mul (abs_nonneg _), abs_of_nonneg (inv_nonneg.2 (pow_nonneg rpos.le _)),
+          inv_mul_cancel (pow_pos rpos _).ne', ennreal.of_real_one, one_mul],
+    have J : μ (f.symm '' closed_ball y r) < m * μ (closed_ball y r),
+    { rw mul_assoc at I,
+      apply (ennreal.mul_lt_mul_left _ ennreal.of_real_ne_top).1 I,
+      simpa only [abs_nonpos_iff, ennreal.of_real_eq_zero, inv_eq_zero, ne.def]
+        using (pow_pos rpos _).ne' },
+    rwa [hr2, ennreal.div_lt_iff (or.inl (add_haar_closed_ball_pos μ y rpos).ne')
+          (or.inl (add_haar_closed_ball_lt_top μ y r).ne)] },
+  have B : ∀ l, l < d → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
       l < μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r),
   { assume l hl,
+    rcases eq_or_lt_of_le (abs_nonneg _ : 0 ≤ abs (g : E →ₗ[ℝ] E).det) with h|detpos,
+    { simp only [d, ←h, ennreal.not_lt_zero, ennreal.of_real_zero] at hl, exact false.elim hl },
+    have : (g : E →ₗ[ℝ] E).det ≠ 0 :=
+      λ h, by simpa only [h, lt_self_iff_false, abs_zero] using detpos,
+    let G : E ≃L[ℝ] E := (linear_map.equiv_of_det_ne_zero _ this).to_continuous_linear_equiv,
+    let f' : E →L[ℝ] E := G.symm,
+    have h' : has_fderiv_at f.symm (G : E →L[ℝ] E) y := h,
+    have hff' : has_fderiv_at f f' x :=
+      local_homeomorph.has_fderiv_at_symm' f.symm y_mem h',
     have L : tendsto (λ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d) (𝓝[Ico 0 1] 1)
       (𝓝 (ennreal.of_real (1 ^ finrank ℝ E) * d)),
     { apply ennreal.tendsto.mul_const _ (or.inr ennreal.of_real_ne_top),
@@ -328,11 +266,11 @@ begin
     obtain ⟨t, tlim, ht⟩ : ∃ (t : ℝ), l < ennreal.of_real (t ^ finrank ℝ E) * d ∧
       t ∈ Ico (0 : ℝ) 1 := (((tendsto_order.1 L).1 _ hl).and self_mem_nhds_within).exists,
     have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-      ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d * μ (closed_ball 0 1)
-        ≤ μ (f.source ∩ f ⁻¹' (closed_ball y r)),
-    { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' x ⁻¹' (closed_ball 0 1)
-        ⊆ f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1) :=
-          eventually_smul_preimage_fderiv_subset_inter_preimage (h x x_mem)
+      ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E)
+        * d * μ (closed_ball 0 1) ≤ μ (f.source ∩ f ⁻¹' (closed_ball y r)),
+    { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (closed_ball 0 1)
+        ⊆ f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1),
+          by apply eventually_smul_preimage_fderiv_subset_inter_preimage hff'
             (convex_closed_ball _ _) (closed_ball_mem_nhds _ zero_lt_one) bounded_closed_ball ht
             (f.open_source.mem_nhds x_mem),
       filter_upwards [this, self_mem_nhds_within],
@@ -341,14 +279,21 @@ begin
       calc
       ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d
         * μ (closed_ball 0 1)
-      = μ ({x} + r • t • ⇑(f' x) ⁻¹' closed_ball 0 1) :
-        by simp only [abs_of_nonneg, r_pos.le, ht.left, add_haar_smul, image_add_left, pow_nonneg,
-          add_haar_preimage_add, singleton_add, mul_assoc, haar_preimage_continuous_linear_equiv]
+      = μ ({x} + r • t • f' ⁻¹' closed_ball 0 1) :
+        begin
+          simp only [abs_of_nonneg, r_pos.le, ht.left, mul_assoc, add_haar_smul, image_add_left,
+            add_haar_preimage_continuous_linear_equiv, continuous_linear_equiv.symm_symm,
+            continuous_linear_equiv.coe_coe, pow_nonneg, add_haar_preimage_add, singleton_add],
+          simp only [d, coe_coe],
+          congr,
+          ext z,
+          refl,
+        end
       ... ≤ μ (f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)) : measure_mono hr
       ... = μ (f.source ∩ f ⁻¹' closed_ball y r) :
-        by simp only [y_mem, smul_closed_ball, zero_le_one, real.norm_eq_abs, abs_of_nonneg r_pos.le,
+        by simp only [y_mem, smul_closed_ball, zero_le_one, real.norm_eq_abs,
           mul_one, preimage_add_closed_ball, image_add_left, local_homeomorph.right_inv, zero_add,
-          singleton_add, smul_zero, sub_neg_eq_add] },
+          singleton_add, smul_zero, sub_neg_eq_add, abs_of_nonneg r_pos.le] },
     filter_upwards [this, self_mem_nhds_within],
     assume r hr rpos,
     replace rpos : 0 < r := rpos,
@@ -357,48 +302,5 @@ begin
       (or.inl (add_haar_closed_ball_lt_top μ _ _).ne), add_haar_closed_ball' μ _ rpos.le],
     convert hr using 1,
     ring },
-  have B : ∀ m, d < m → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-      μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r) < m,
-  { assume m hm,
-    have L : tendsto (λ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d) (𝓝[Ioi 1] 1)
-      (𝓝 (ennreal.of_real (1 ^ finrank ℝ E) * d)),
-    { apply ennreal.tendsto.mul_const _ (or.inr ennreal.of_real_ne_top),
-      apply ennreal.tendsto_of_real (tendsto.pow _ _),
-      exact nhds_within_le_nhds, },
-    simp only [one_pow, one_mul, ennreal.of_real_one] at L,
-    obtain ⟨t, tlim, ht⟩ : ∃ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d < m ∧
-      1 < t := (((tendsto_order.1 L).2 _ hm).and self_mem_nhds_within).exists,
-    have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), μ (f.source ∩ f ⁻¹' (closed_ball y r)) ≤
-      ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E)
-        * d * μ (closed_ball 0 1),
-     { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)
-        ⊆ {x} + r • t • f' x ⁻¹' (closed_ball 0 1) :=
-          eventually_preimage_smul_subset_preimage_fderiv x_mem (h x x_mem)
-          (convex_closed_ball _ _) (closed_ball_mem_nhds _ zero_lt_one) bounded_closed_ball ht,
-      filter_upwards [this, self_mem_nhds_within],
-      assume r hr r_pos,
-      replace r_pos : 0 < r := r_pos,
-      calc
-      μ (f.source ∩ f ⁻¹' (closed_ball y r))
-      = μ (f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)) :
-        by simp only [y_mem, smul_closed_ball, zero_le_one, real.norm_eq_abs, abs_of_nonneg r_pos.le,
-          mul_one, preimage_add_closed_ball, image_add_left, local_homeomorph.right_inv, zero_add,
-          singleton_add, smul_zero, sub_neg_eq_add]
-      ... ≤ μ ({x} + r • t • ⇑(f' x) ⁻¹' closed_ball 0 1) : measure_mono hr
-      ... = ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d
-        * μ (closed_ball 0 1) : begin
-          simp only [abs_of_nonneg, r_pos.le, (zero_lt_one.trans ht).le, mul_assoc, add_haar_smul,
-            image_add_left, pow_nonneg, add_haar_preimage_add, singleton_add,
-            haar_preimage_continuous_linear_equiv, coe_coe],
-          refl,
-        end },
-    filter_upwards [this, self_mem_nhds_within],
-    assume r hr rpos,
-    replace rpos : 0 < r := rpos,
-    apply lt_of_le_of_lt (ennreal.div_le_of_le_mul _) tlim,
-    rw [add_haar_closed_ball' μ _ rpos.le],
-    convert hr using 1,
-    ring },
-  exact tendsto_order.2 ⟨A, B⟩,
-
+  exact tendsto_order.2 ⟨B, A⟩
 end
