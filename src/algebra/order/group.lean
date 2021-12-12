@@ -1205,7 +1205,7 @@ by rw [neg_part_eq_inv_sup_one, one_inv, sup_idem]
 by rw [mabs_eq_sup_inv, sup_comm, inv_inv, mabs_eq_sup_inv]
 
 @[to_additive abs_sub_comm]
-lemma mabs_inv_comm (a b : α) : |a / b| = |b / a| :=
+lemma mabs_div_comm (a b : α) : |a / b| = |b / a| :=
 calc  |a / b| = |(b / a)⁻¹| : congr_arg _ (inv_div' b a).symm
           ... = |b / a|      : mabs_inv (b / a)
 
@@ -1214,23 +1214,29 @@ end group
 end without_covariant
 
 
-section covariant_add_le
+section has_inv_linear
+variables [has_inv α] [linear_order α] {a b: α}
 
-section has_neg
-variables [has_neg α] [linear_order α] {a b: α}
+@[to_additive abs_eq_max_neg]
+lemma mabs_eq_max_inv : abs a = max a a⁻¹ := rfl
 
-lemma abs_eq_max_neg : abs a = max a (-a) := rfl
+@[to_additive abs_choice]
+lemma mabs_choice (x : α) : |x| = x ∨ |x| = x⁻¹ := max_choice _ _
 
-lemma abs_choice (x : α) : |x| = x ∨ |x| = -x := max_choice _ _
+@[to_additive le_abs]
+lemma le_mabs : a ≤ |b| ↔ a ≤ b ∨ a ≤ b⁻¹ := le_max_iff
 
-lemma le_abs : a ≤ |b| ↔ a ≤ b ∨ a ≤ -b := le_max_iff
+@[to_additive lt_abs]
+lemma lt_mabs : a < |b| ↔ a < b ∨ a < b⁻¹ := lt_max_iff
 
-lemma lt_abs : a < |b| ↔ a < b ∨ a < -b := lt_max_iff
-
-lemma abs_by_cases (P : α → Prop) {a : α} (h1 : P a) (h2 : P (-a)) : P (|a|) :=
+@[to_additive abs_by_cases]
+lemma mabs_by_cases (P : α → Prop) {a : α} (h1 : P a) (h2 : P a⁻¹) : P (|a|) :=
 sup_ind _ _ h1 h2
 
-end has_neg
+end has_inv_linear
+
+
+section covariant_add_le
 
 section lattice_comm_group
 variables [lattice_comm_group α] {a b : α}
@@ -1265,77 +1271,94 @@ by rw [mabs_le_iff, inv_le']
 
 end lattice_comm_group
 
-section add_group
-variables [linear_ordered_add_comm_group α] {a b c : α}
 
-lemma le_abs' : a ≤ |b| ↔ b ≤ -a ∨ a ≤ b :=
-by rw [le_abs, or.comm, le_neg]
+section linear_ordered_comm_group
+variables [linear_ordered_comm_group α] {a b c : α}
 
-lemma eq_or_eq_neg_of_abs_eq {a b : α} (h : |a| = b) : a = b ∨ a = -b :=
-by simpa only [← h, eq_comm, eq_neg_iff_eq_neg] using abs_choice a
+@[to_additive le_abs']
+lemma le_mabs' : a ≤ |b| ↔ b ≤ a⁻¹ ∨ a ≤ b :=
+by rw [le_mabs, or.comm, le_inv']
 
-lemma abs_eq_abs {a b : α} : |a| = |b| ↔ a = b ∨ a = -b :=
+@[to_additive eq_or_eq_neg_of_abs_eq]
+lemma eq_or_eq_inv_of_mabs_eq {a b : α} (h : |a| = b) : a = b ∨ a = b⁻¹ :=
+by simpa only [← h, eq_comm, eq_inv_iff_eq_inv] using mabs_choice a
+
+@[to_additive abs_eq_abs]
+lemma mabs_eq_mabs {a b : α} : |a| = |b| ↔ a = b ∨ a = b⁻¹ :=
 begin
   refine ⟨λ h, _, λ h, _⟩,
-  { obtain rfl | rfl := eq_or_eq_neg_of_abs_eq h;
-    simpa only [neg_eq_iff_neg_eq, neg_inj, or.comm, @eq_comm _ (-b)] using abs_choice b },
-  { cases h; simp only [h, abs_neg] },
+  { obtain rfl | rfl := eq_or_eq_inv_of_mabs_eq h;
+    simpa only [inv_eq_iff_inv_eq, inv_inj, or.comm, @eq_comm _ b⁻¹] using mabs_choice b },
+  { cases h; simp only [h, mabs_inv] },
 end
 
-@[simp] lemma abs_pos : 0 < |a| ↔ a ≠ 0 :=
+@[simp, to_additive abs_pos]
+lemma one_lt_mabs : 1 < |a| ↔ a ≠ 1 :=
 begin
-  rcases lt_trichotomy a 0 with (ha|rfl|ha),
-  { simp [abs_of_neg ha, neg_pos, ha.ne, ha] },
+  rcases lt_trichotomy a 1 with (ha|rfl|ha),
+  { simp [mabs_of_lt_one ha, neg_pos, ha.ne, ha] },
   { simp },
-  { simp [abs_of_pos ha, ha, ha.ne.symm] }
+  { simp [mabs_of_one_lt ha, ha, ha.ne.symm] }
 end
 
-lemma abs_pos_of_pos (h : 0 < a) : 0 < |a| := abs_pos.2 h.ne.symm
+@[to_additive abs_pos_of_pos]
+lemma one_lt_mabs_of_one_lt (h : 1 < a) : 1 < |a| := one_lt_mabs.2 h.ne.symm
 
-lemma abs_pos_of_neg (h : a < 0) : 0 < |a| := abs_pos.2 h.ne
+@[to_additive abs_pos_of_neg]
+lemma one_lt_mabs_of_lt_one (h : a < 1) : 1 < |a| := one_lt_mabs.2 h.ne
 
-lemma neg_abs_le_self (a : α) : -|a| ≤ a :=
+@[to_additive neg_abs_le_self]
+lemma inv_mabs_le_self (a : α) : |a|⁻¹ ≤ a :=
 begin
-  cases le_total 0 a with h h,
-  { calc -|a| = - a   : congr_arg (has_neg.neg) (abs_of_nonneg h)
-            ... ≤ 0     : neg_nonpos.mpr h
+  cases le_total 1 a with h h,
+  { calc |a|⁻¹ = a⁻¹   : congr_arg (has_inv.inv) (mabs_of_one_le h)
+            ... ≤ 1     : inv_le_one'.mpr h
             ... ≤ a     : h },
-  { calc -|a| = - - a : congr_arg (has_neg.neg) (abs_of_nonpos h)
-            ... ≤ a     : (neg_neg a).le }
+  { calc |a|⁻¹ = a⁻¹⁻¹ : congr_arg (has_inv.inv) (mabs_of_le_one h)
+            ... ≤ a     : (inv_inv a).le }
 end
 
-lemma abs_nonneg (a : α) : 0 ≤ |a| :=
-(le_total 0 a).elim (λ h, h.trans (le_abs_self a)) (λ h, (neg_nonneg.2 h).trans $ neg_le_abs_self a)
+@[to_additive abs_nonneg]
+lemma one_le_mabs (a : α) : 1 ≤ |a| :=
+(le_total 1 a).elim (λ h, h.trans (le_mabs_self a))
+  (λ h, (one_le_inv'.2 h).trans $ inv_le_mabs_self a)
 
-@[simp] lemma abs_abs (a : α) : | |a| | = |a| :=
-abs_of_nonneg $ abs_nonneg a
+@[simp, to_additive abs_abs]
+lemma mabs_mabs (a : α) : | |a| | = |a| :=
+mabs_of_one_le $ one_le_mabs a
 
-@[simp] lemma abs_eq_zero : |a| = 0 ↔ a = 0 :=
-decidable.not_iff_not.1 $ ne_comm.trans $ (abs_nonneg a).lt_iff_ne.symm.trans abs_pos
+@[simp, to_additive abs_eq_zero]
+lemma mabs_eq_one : |a| = 1 ↔ a = 1 :=
+decidable.not_iff_not.1 $ ne_comm.trans $ (one_le_mabs a).lt_iff_ne.symm.trans one_lt_mabs
 
-@[simp] lemma abs_nonpos_iff {a : α} : |a| ≤ 0 ↔ a = 0 :=
-(abs_nonneg a).le_iff_eq.trans abs_eq_zero
+@[simp, to_additive abs_nonpos_iff]
+lemma mabs_lt_one_iff {a : α} : |a| ≤ 1 ↔ a = 1 :=
+(one_le_mabs a).le_iff_eq.trans mabs_eq_one
 
-variable [covariant_class α α (swap (+)) (≤)]
+@[to_additive abs_lt]
+lemma mabs_lt : |a| < b ↔ b⁻¹ < a ∧ a < b :=
+max_lt_iff.trans $ and.comm.trans $ by rw [inv_lt']
 
-lemma abs_lt : |a| < b ↔ - b < a ∧ a < b :=
-max_lt_iff.trans $ and.comm.trans $ by rw [neg_lt]
+@[to_additive neg_lt_of_abs_lt]
+lemma inv_lt_of_mabs_lt (h : |a| < b) : b⁻¹ < a := (mabs_lt.mp h).1
 
-lemma neg_lt_of_abs_lt (h : |a| < b) : -b < a := (abs_lt.mp h).1
+@[to_additive lt_of_abs_lt]
+lemma lt_of_mabs_lt (h : |a| < b) : a < b := (mabs_lt.mp h).2
 
-lemma lt_of_abs_lt (h : |a| < b) : a < b := (abs_lt.mp h).2
-
-lemma max_sub_min_eq_abs' (a b : α) : max a b - min a b = |a - b| :=
+@[to_additive max_sub_min_eq_abs']
+lemma max_div_min_eq_mabs' (a b : α) : max a b / min a b = |a / b| :=
 begin
   cases le_total a b with ab ba,
-  { rw [max_eq_right ab, min_eq_left ab, abs_of_nonpos, neg_sub], rwa sub_nonpos },
-  { rw [max_eq_left ba, min_eq_right ba, abs_of_nonneg], rwa sub_nonneg }
+  { rw [max_eq_right ab, min_eq_left ab, mabs_of_le_one, inv_div'], rwa div_le_one' },
+  { rw [max_eq_left ba, min_eq_right ba, mabs_of_one_le], rwa one_le_div' }
 end
 
-lemma max_sub_min_eq_abs (a b : α) : max a b - min a b = |b - a| :=
-by { rw abs_sub_comm, exact max_sub_min_eq_abs' _ _ }
+@[to_additive max_sub_min_eq_abs]
+lemma max_div_min_eq_mabs (a b : α) : max a b / min a b = |b / a| :=
+by { rw mabs_div_comm, exact max_div_min_eq_mabs' _ _ }
 
-end add_group
+end linear_ordered_comm_group
+
 
 section add_comm_group
 
