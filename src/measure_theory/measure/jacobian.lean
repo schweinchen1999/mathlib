@@ -156,10 +156,26 @@ end
 variables [measurable_space E] [finite_dimensional ℝ E] [borel_space E]
   (μ : measure E) [is_add_haar_measure μ]
 
+open_locale ennreal
 
-lemma tendsto_add_haar_cthickening {s : set E} (hs : is_compact s) :
-  tendsto (λ r, μ (closed_ball 0 r + s)) (𝓝 0) (𝓝 (μ s)) :=
-sorry
+lemma tendsto_add_haar_cthickening {R : ℝ} (Rpos : 0 < R) {s : set E}
+  (hs : is_closed s) (h's : μ (cthickening R s) ≠ ∞) :
+  tendsto (λ r, μ (cthickening r s)) (𝓝 0) (𝓝 (μ s)) :=
+begin
+  obtain ⟨u, u_anti, u_pos, u_lim⟩ :
+    ∃ (u : ℕ → ℝ), strict_anti u ∧ (∀ (n : ℕ), 0 < u n) ∧ tendsto u at_top (𝓝 0) :=
+      exists_seq_strict_anti_tendsto (0 : ℝ),
+  have : s = ⋂ n, cthickening (u n) s,
+  { apply subset.antisymm,
+    apply subset_Inter_iff.2 (λ n, _),
+    apply closure_subset_cthickening
+
+  }
+
+end
+
+
+#exit
 
 lemma tendsto_add_haar_preimage_closed_ball_div_add_haar_closed_ball
   (f : local_homeomorph E E) (g : E →L[ℝ] E) (y : E) (y_mem : y ∈ f.target)

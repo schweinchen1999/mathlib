@@ -835,16 +835,24 @@ is_closed.preimage continuous_inf_edist is_closed_Iic
 @[simp] lemma cthickening_empty (δ : ℝ) : cthickening δ (∅ : set α) = ∅ :=
 by simp only [cthickening, ennreal.of_real_ne_top, set_of_false, inf_edist_empty, top_le_iff]
 
+lemma cthickening_of_nonpos {δ : ℝ} (hδ : δ ≤ 0) (E : set α) :
+  cthickening δ E = closure E :=
+by { ext x, simp [mem_closure_iff_inf_edist_zero, cthickening, ennreal.of_real_eq_zero.2 hδ] }
+
 @[simp] lemma cthickening_zero (E : set α) : cthickening 0 E = closure E :=
-by { ext x, simp [mem_closure_iff_inf_edist_zero, cthickening], }
+cthickening_of_nonpos le_rfl E
 
 lemma cthickening_mono {δ₁ δ₂ : ℝ} (hle : δ₁ ≤ δ₂) (E : set α) :
   cthickening δ₁ E ⊆ cthickening δ₂ E :=
 preimage_mono (Iic_subset_Iic.mpr (ennreal.of_real_le_of_real hle))
 
-lemma closure_subset_cthickening {δ : ℝ} (δ_nn : 0 ≤ δ) (E : set α) :
+lemma closure_subset_cthickening (δ : ℝ) (E : set α) :
   closure E ⊆ cthickening δ E :=
-by { rw ← cthickening_zero, exact cthickening_mono δ_nn E, }
+by { rw ← cthickening_of_nonpos (min_le_right δ 0), exact cthickening_mono (min_le_left δ 0) E }
+
+lemma subset_cthickening (δ : ℝ) (E : set α) :
+  E ⊆ cthickening δ E :=
+subset_closure.trans (closure_subset_cthickening δ E)
 
 lemma cthickening_subset_of_subset (δ : ℝ) {E₁ E₂ : set α} (h : E₁ ⊆ E₂) :
   cthickening δ E₁ ⊆ cthickening δ E₂ :=
