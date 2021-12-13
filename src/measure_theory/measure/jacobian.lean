@@ -27,7 +27,7 @@ open_locale pointwise topological_space
 `f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
 Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the former,
 for small enough `r`. -/
-lemma eventually_smul_preimage_fderiv_subset_preimage
+lemma eventually_smul_preimage_fderiv_subset_preimage'
   {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
   {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
   {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
@@ -85,20 +85,77 @@ end
 `f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
 Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the
 intersection of the former with an arbitrary neighborhood of `x`, for small enough `r`. -/
-lemma eventually_smul_preimage_fderiv_subset_inter_preimage
+lemma eventually_smul_preimage_fderiv_subset_inter_preimage'
   {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
   {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
   {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) {u : set E} (hu : u ∈ 𝓝 x) :
   ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u ∩ f ⁻¹' ({f x} + r • s) :=
 begin
   have A : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=
-    eventually_smul_preimage_fderiv_subset_preimage hf s_conv hs h's ht,
+    eventually_smul_preimage_fderiv_subset_preimage' hf s_conv hs h's ht,
   have B : ∀ᶠ r in 𝓝 (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u :=
     eventually_singleton_add_smul_subset ((f'.antilipschitz.bounded_preimage h's).smul _) hu,
   filter_upwards [A, nhds_within_le_nhds B],
   assume r hr h'r,
   exact subset_inter h'r hr
 end
+
+/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
+`f` of a small ball `closed_ball (f x) r` around `f x` resembles its preimage under `f'`.
+Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the former,
+for small enough `r`. -/
+lemma eventually_preimage_fderiv_closed_ball_subset_preimage_closed_ball
+  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
+  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+    {x} + f' ⁻¹' (closed_ball 0 (t * r)) ⊆ f ⁻¹' (closed_ball (f x) r) :=
+begin
+  let C : ℝ := max (∥↑(f'.symm)∥₊) 1,
+  have Cpos : 0 < C := zero_lt_one.trans_le (le_max_right _ _),
+  let ε : ℝ := (1 - t) / C,
+  have εpos : 0 < ε := div_pos (by linarith [ht.2]) Cpos,
+  obtain ⟨δ, δpos, hδ⟩ :
+    ∃ (δ : ℝ) (H : 0 < δ), closed_ball 0 δ ⊆ {z : E | ∥f (x + z) - f x - f' z∥ ≤ ε * ∥z∥} :=
+      nhds_basis_closed_ball.mem_iff.1 ((has_fderiv_at_iff_is_o_nhds_zero.1 hf).def εpos),
+  have : Ioc (0 : ℝ) (δ / C) ∈ 𝓝[Ioi (0 : ℝ)] 0,
+    by { apply Ioc_mem_nhds_within_Ioi, simp only [div_pos δpos Cpos, left_mem_Ico] },
+  filter_upwards [this],
+  rintros r ⟨rpos, rle⟩ y hy,
+  let z := y - x,
+  have B : ∥f' z∥ ≤ t * r, by simpa only [continuous_linear_equiv.map_add,
+    continuous_linear_equiv.map_neg, continuous_linear_equiv.map_sub, image_add_left, mem_preimage,
+    singleton_add, mem_closed_ball_zero_iff, neg_add_eq_sub] using hy,
+  have Iz : ∥z∥ ≤ C * r := calc
+    ∥z∥ = dist z 0 : (dist_zero_right _).symm
+    ... ≤ ∥↑(f'.symm)∥₊ * dist (f' z) (f' 0) : f'.antilipschitz.le_mul_dist _ _
+    ... ≤ C * dist (f' z) (f' 0) : mul_le_mul_of_nonneg_right (le_max_left _ _) dist_nonneg
+    ... ≤ C * (t * r) :
+      by { rw [dist_eq_norm, f'.map_zero, sub_zero], exact mul_le_mul_of_nonneg_left B Cpos.le }
+    ... ≤ C * r : mul_le_mul_of_nonneg_left (mul_le_of_le_one_left rpos.le ht.2.le) Cpos.le,
+  have A : ∥f (x + z) - f x - f' z∥ ≤ (1 - t) * r, from calc
+    ∥f (x + z) - f x - f' z∥ ≤ ε * ∥z∥ :
+      hδ (mem_closed_ball_zero_iff.2 (Iz.trans ((le_div_iff' Cpos).1 rle)))
+    ... ≤ ε * (C * r) : mul_le_mul_of_nonneg_left Iz εpos.le
+    ... = (1 - t) * r : by { field_simp [ε, Cpos.ne'], ring },
+  simp only [dist_eq_norm, mem_closed_ball, mem_preimage],
+  calc ∥f y - f x∥
+      = ∥(f (x + z) - f x - f' z) + f' z∥ : by simp only [add_sub_cancel'_right, sub_add_cancel]
+  ... ≤ ∥f (x + z) - f x - f' z∥ + ∥f' z∥ : norm_add_le _ _
+  ... ≤ (1 - t) * r + t * r : add_le_add A B
+  ... = r : by ring
+end
+
+
+/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
+`f` of a small ball `closed_ball (f x) r` around `f x` resembles its preimage under `f'`.
+Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the former,
+for small enough `r`. -/
+lemma eventually_preimage_fderiv_closed_ball_subset_inter_preimage_closed_ball
+  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
+  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) {u : set E} (hu : u ∈ 𝓝 x) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+    {x} + f' ⁻¹' (closed_ball 0 (t * r)) ⊆ u ∩ f ⁻¹' (closed_ball (f x) r) :=
+sorry
 
 /-- Consider a map `f` with a derivative `f'` at a point `x`. For small enough `r`, the image under
 `f` of the ball `closed_ball x r` resembles its under image `f'`. Here, we show that it is
@@ -163,16 +220,13 @@ lemma tendsto_add_haar_cthickening {R : ℝ} (Rpos : 0 < R) {s : set E}
   tendsto (λ r, μ (cthickening r s)) (𝓝[Ioi 0] 0) (𝓝 (μ (closure s))) :=
 begin
   rw closure_eq_Inter_cthickening,
-  apply tendsto_measure_Inter_pos,
+  apply tendsto_measure_bInter_pos,
   { assume r hr,
     exact is_closed_cthickening.measurable_set },
   { assume i j ipos ij,
     exact cthickening_mono ij _ },
   { exact ⟨R, Rpos, hs⟩ }
 end
-
-
-#exit
 
 lemma tendsto_add_haar_preimage_closed_ball_div_add_haar_closed_ball
   (f : local_homeomorph E E) (g : E →L[ℝ] E) (y : E) (y_mem : y ∈ f.target)
@@ -190,8 +244,8 @@ begin
       μ (closed_ball 0 ε + g '' (closed_ball 0 1)) < m * μ (closed_ball 0 1) ∧ 0 < ε,
     { have L1 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
         (𝓝 0) (𝓝 (μ (g '' (closed_ball 0 1)))),
-      { apply tendsto_add_haar_cthickening,
-        exact (proper_space.is_compact_closed_ball _ _).image g.continuous },
+      { --apply tendsto_add_haar_cthickening,
+        sorry }, --exact (proper_space.is_compact_closed_ball _ _).image g.continuous },
       have L2 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
         (𝓝 0) (𝓝 (d * μ (closed_ball 0 1))),
       { convert L1,
@@ -264,35 +318,30 @@ begin
     have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
       ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E)
         * d * μ (closed_ball 0 1) ≤ μ (f.source ∩ f ⁻¹' (closed_ball y r)),
-    { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (closed_ball 0 1)
-        ⊆ f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1),
-          by apply eventually_smul_preimage_fderiv_subset_inter_preimage hff'
-            (convex_closed_ball _ _) (closed_ball_mem_nhds _ zero_lt_one) bounded_closed_ball ht
-            (f.open_source.mem_nhds x_mem),
+    { have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + f' ⁻¹' (closed_ball 0 (t * r))
+        ⊆ f.source ∩ f ⁻¹' (closed_ball (f x) r),
+          by apply eventually_preimage_fderiv_closed_ball_subset_inter_preimage_closed_ball hff' ht
+            (is_open.mem_nhds f.open_source x_mem),
       filter_upwards [this, self_mem_nhds_within],
       assume r hr r_pos,
-      replace r_pos : 0 < r := r_pos,
+      change 0 < r at r_pos,
       calc
       ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E) * d
-        * μ (closed_ball 0 1)
-      = μ ({x} + r • t • f' ⁻¹' closed_ball 0 1) :
+        * μ (closed_ball 0 1) = μ ({x} + f' ⁻¹' (closed_ball 0 (t * r))) :
         begin
-          simp only [abs_of_nonneg, r_pos.le, ht.left, mul_assoc, add_haar_smul, image_add_left,
-            add_haar_preimage_continuous_linear_equiv, continuous_linear_equiv.symm_symm,
-            continuous_linear_equiv.coe_coe, pow_nonneg, add_haar_preimage_add, singleton_add],
-          simp only [d, coe_coe],
-          congr,
-          ext z,
-          refl,
+          have : d = ennreal.of_real (abs (G : E →ₗ[ℝ] E).det),
+          { simp only [d, coe_coe], congr, ext z, refl },
+          simp only [μ.add_haar_closed_ball' 0 (mul_nonneg ht.left r_pos.le), mul_pow,
+            image_add_left, add_haar_preimage_continuous_linear_equiv, this,
+            continuous_linear_equiv.symm_symm, continuous_linear_equiv.coe_coe,
+            add_haar_preimage_add, singleton_add, coe_coe, ennreal.of_real_mul (pow_nonneg ht.1 _)],
+          simp only [mul_assoc, mul_comm],
         end
-      ... ≤ μ (f.source ∩ f ⁻¹' ({f x} + r • closed_ball 0 1)) : measure_mono hr
-      ... = μ (f.source ∩ f ⁻¹' closed_ball y r) :
-        by simp only [y_mem, smul_closed_ball, zero_le_one, real.norm_eq_abs,
-          mul_one, preimage_add_closed_ball, image_add_left, local_homeomorph.right_inv, zero_add,
-          singleton_add, smul_zero, sub_neg_eq_add, abs_of_nonneg r_pos.le] },
+      ... ≤ μ (f.source ∩ f ⁻¹' (closed_ball (f x) r)) : measure_mono hr
+      ... = μ (f.source ∩ f ⁻¹' (closed_ball y r)) : by simp only [y_mem, f.right_inv], },
     filter_upwards [this, self_mem_nhds_within],
     assume r hr rpos,
-    replace rpos : 0 < r := rpos,
+    change 0 < r at rpos,
     apply tlim.trans_le,
     rw [ennreal.le_div_iff_mul_le (or.inl (add_haar_closed_ball_pos μ _ rpos).ne')
       (or.inl (add_haar_closed_ball_lt_top μ _ _).ne), add_haar_closed_ball' μ _ rpos.le],

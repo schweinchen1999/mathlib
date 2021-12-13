@@ -113,7 +113,7 @@ begin
     by rw measure_Union hs
       (λ n, by simpa only [image_add_left, singleton_add] using measurable_id.const_add _ h's)
   ... = μ (range u + s) : by rw [← Union_add, Union_singleton_eq_range]
-  ... < ∞ : bounded.add_haar_lt_top μ (hu.add sb)
+  ... < ∞ : bounded.measure_lt_top (hu.add sb)
 end
 
 /-- If a set is disjoint of its translates by infinitely many bounded vectors, then it has measure
@@ -383,7 +383,7 @@ end
 lemma add_haar_closed_ball_lt_top {E : Type*} [normed_group E] [proper_space E] [measurable_space E]
   (μ : measure E) [is_add_haar_measure μ] (x : E) (r : ℝ) :
   μ (closed_ball x r) < ∞ :=
-(proper_space.is_compact_closed_ball x r).add_haar_lt_top μ
+(proper_space.is_compact_closed_ball x r).measure_lt_top
 
 lemma add_haar_ball_lt_top {E : Type*} [normed_group E] [proper_space E] [measurable_space E]
   (μ : measure E) [is_add_haar_measure μ] (x : E) (r : ℝ) :

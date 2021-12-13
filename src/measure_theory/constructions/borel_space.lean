@@ -1177,6 +1177,18 @@ def homemorph.to_measurable_equiv (h : α ≃ₜ β) : α ≃ᵐ β :=
   measurable_to_fun := h.continuous_to_fun.measurable,
   measurable_inv_fun := h.continuous_inv_fun.measurable }
 
+protected lemma is_finite_measure_on_compacts.map
+  {α : Type*} {m0 : measurable_space α} [topological_space α] [opens_measurable_space α]
+  {β : Type*} [measurable_space β] [topological_space β] [borel_space β]
+  [t2_space β] (μ : measure α) [is_finite_measure_on_compacts μ] (f : α ≃ₜ β) :
+  is_finite_measure_on_compacts (measure.map f μ) :=
+⟨begin
+  assume K hK,
+  rw [measure.map_apply f.measurable hK.measurable_set],
+  apply is_compact.measure_lt_top,
+  rwa f.compact_preimage
+end⟩
+
 end borel_space
 
 instance empty.borel_space : borel_space empty := ⟨borel_eq_top_of_discrete.symm⟩
@@ -1323,7 +1335,7 @@ lemma tendsto_measure_cthickening {μ : measure α} {s : set α}
 begin
   have A : tendsto (λ r, μ (cthickening r s)) (𝓝[Ioi 0] 0) (𝓝 (μ (closure s))),
   { rw closure_eq_Inter_cthickening,
-    exact tendsto_measure_Inter_pos (λ r hr, is_closed_cthickening.measurable_set)
+    exact tendsto_measure_bInter_pos (λ r hr, is_closed_cthickening.measurable_set)
       (λ i j ipos ij, cthickening_mono ij _) hs },
   have B : tendsto (λ r, μ (cthickening r s)) (𝓝[Iic 0] 0) (𝓝 (μ (closure s))),
   { apply tendsto.congr' _ tendsto_const_nhds,
