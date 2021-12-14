@@ -24,83 +24,6 @@ open metric set asymptotics filter measure_theory measure_theory.measure finite_
 open_locale pointwise topological_space
 
 /-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
-`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
-Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the former,
-for small enough `r`. -/
-lemma eventually_smul_preimage_fderiv_subset_preimage'
-  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
-  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
-  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=
-begin
-  obtain ⟨ε, εpos, hε⟩ : ∃ (ε : ℝ) (H : 0 < ε), t • s + closed_ball (0 : F) ε ⊆ s :=
-    s_conv.exists_smul_add_closed_ball_subset hs ht,
-  obtain ⟨R, Rpos, Rs⟩ : ∃ R, 0 < R ∧ f' ⁻¹' s ⊆ closed_ball (0 : E) R :=
-    (f'.antilipschitz.bounded_preimage h's).subset_ball_lt _ _,
-  obtain ⟨δ, δpos, hδ⟩ :
-    ∃ (δ : ℝ) (H : 0 < δ), closed_ball 0 δ ⊆ {z : E | ∥f (x + z) - f x - f' z∥ ≤ (ε / R) * ∥z∥} :=
-      nhds_basis_closed_ball.mem_iff.1
-        ((has_fderiv_at_iff_is_o_nhds_zero.1 hf).def (div_pos εpos Rpos)),
-  have : Ioc (0 : ℝ) (δ / R) ∈ 𝓝[Ioi (0 : ℝ)] 0,
-  { apply Ioc_mem_nhds_within_Ioi,
-    simp only [div_pos δpos Rpos, left_mem_Ico] },
-  filter_upwards [this],
-  rintros r ⟨rpos, rle⟩ y hy,
-  obtain ⟨z, f'z, rfl⟩ : ∃ (z : E), f' z ∈ s ∧ x + r • t • z = y,
-    by simpa only [mem_smul_set, image_add_left, exists_exists_and_eq_and, mem_preimage,
-                   singleton_add, neg_add_eq_sub, eq_sub_iff_add_eq'] using hy, clear hy,
-  have z_le : ∥z∥ ≤ R, by simpa only [mem_closed_ball, dist_zero_right] using Rs f'z,
-  simp only [image_add_left, mem_preimage, singleton_add, neg_add_eq_sub],
-  let u := f (x + (r * t) • z) - f x - f' ((r * t) • z),
-  suffices H : (r * t) • f' z + u ∈ r • s,
-  { convert H, simp only [add_sub_cancel'_right, smul_smul, u, continuous_linear_equiv.map_smul] },
-  let v := r ⁻¹ • u,
-  suffices H : t • f' z + v ∈ s,
-  { have : (r * t) • f' z + u = r • (t • f' z + v),
-      by simp only [smul_smul, mul_inv_cancel rpos.ne', smul_add, one_smul],
-    rw this,
-    exact smul_mem_smul_set H },
-  suffices H : ∥u∥ ≤ ε * r,
-  { apply hε,
-    apply set.add_mem_add (smul_mem_smul_set f'z),
-    simpa only [norm_smul, real.norm_eq_abs, abs_of_nonneg (inv_nonneg.mpr rpos.le),
-      ← div_eq_inv_mul, div_le_iff rpos, mem_closed_ball, dist_zero_right] using H },
-  have I₀ : ∥(r * t) • z∥ ≤ r * R, from calc
-    ∥(r * t) • z∥ = r * t * ∥z∥ :
-      by simp only [norm_smul, real.norm_eq_abs, abs_of_nonneg, mul_nonneg rpos.le ht.left]
-    ... ≤ r * 1 * R : by apply_rules [mul_le_mul, ht.2.le, ht.1, norm_nonneg, mul_nonneg,
-                                      zero_le_one, le_refl, rpos.le]
-    ... = r * R : by rw [mul_one],
-  have I : ∥(r * t) • z∥ ≤ δ, from calc
-    ∥(r * t) • z∥ ≤ r * R : I₀
-    ... ≤ (δ / R) * R : mul_le_mul_of_nonneg_right rle Rpos.le
-    ... = δ : by field_simp [Rpos.ne'],
-  calc ∥u∥ ≤ ε / R * ∥(r * t) • z∥ :
-    by { apply hδ, simpa only [mem_closed_ball, dist_zero_right] using I }
-  ... ≤ ε / R * (r * R) : mul_le_mul_of_nonneg_left I₀ (div_nonneg εpos.le Rpos.le)
-  ... = ε * r : by { field_simp [Rpos.ne'], ring }
-end
-
-/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
-`f` of a small neighborhood `f x + r • s` of `f x` resembles the preimage of `r • s` under `f'`.
-Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the
-intersection of the former with an arbitrary neighborhood of `x`, for small enough `r`. -/
-lemma eventually_smul_preimage_fderiv_subset_inter_preimage'
-  {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
-  {s : set F} (s_conv : convex ℝ s) (hs : s ∈ 𝓝 (0 : F)) (h's : bounded s)
-  {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) {u : set E} (hu : u ∈ 𝓝 x) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u ∩ f ⁻¹' ({f x} + r • s) :=
-begin
-  have A : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ f ⁻¹' ({f x} + r • s) :=
-    eventually_smul_preimage_fderiv_subset_preimage' hf s_conv hs h's ht,
-  have B : ∀ᶠ r in 𝓝 (0 : ℝ), {x} + r • t • f' ⁻¹' (s) ⊆ u :=
-    eventually_singleton_add_smul_subset ((f'.antilipschitz.bounded_preimage h's).smul _) hu,
-  filter_upwards [A, nhds_within_le_nhds B],
-  assume r hr h'r,
-  exact subset_inter h'r hr
-end
-
-/-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
 `f` of a small ball `closed_ball (f x) r` around `f x` resembles its preimage under `f'`.
 Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the former,
 for small enough `r`. -/
@@ -145,17 +68,29 @@ begin
   ... = r : by ring
 end
 
-
 /-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
 `f` of a small ball `closed_ball (f x) r` around `f x` resembles its preimage under `f'`.
-Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in the former,
-for small enough `r`. -/
+Here we prove that the rescaling of the latter by a fixed factor `t < 1` is contained in
+the intersection of any neighborhood of `x` with the former, for small enough `r`. -/
 lemma eventually_preimage_fderiv_closed_ball_subset_inter_preimage_closed_ball
   {f : E → F} {x : E} {f' : E ≃L[ℝ] F} (hf : has_fderiv_at f (f' : E →L[ℝ] F) x)
   {t : ℝ} (ht : t ∈ Ico (0 : ℝ) 1) {u : set E} (hu : u ∈ 𝓝 x) :
   ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
     {x} + f' ⁻¹' (closed_ball 0 (t * r)) ⊆ u ∩ f ⁻¹' (closed_ball (f x) r) :=
-sorry
+begin
+  have A : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+    {x} + f' ⁻¹' (closed_ball 0 (t * r)) ⊆ f ⁻¹' (closed_ball (f x) r) :=
+      eventually_preimage_fderiv_closed_ball_subset_preimage_closed_ball hf ht,
+  have B : ∀ᶠ r in 𝓝 (0 : ℝ), {x} + r • f' ⁻¹' (closed_ball 0 t) ⊆ u :=
+    eventually_singleton_add_smul_subset (f'.antilipschitz.bounded_preimage bounded_closed_ball) hu,
+  filter_upwards [A, nhds_within_le_nhds B, self_mem_nhds_within],
+  assume r hr h'r rpos,
+  change 0 < r at rpos,
+  apply subset_inter _ hr,
+  convert h'r,
+  rw [← f'.preimage_smul_set, smul_closed_ball _ _ ht.1, real.norm_eq_abs,
+    abs_of_nonneg rpos.le, smul_zero, mul_comm],
+end
 
 /-- Consider a map `f` with a derivative `f'` at a point `x`. For small enough `r`, the image under
 `f` of the ball `closed_ball x r` resembles its under image `f'`. Here, we show that it is

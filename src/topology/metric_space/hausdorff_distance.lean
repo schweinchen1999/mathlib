@@ -163,6 +163,15 @@ begin
     exact ⟨n, hn.le⟩ },
 end
 
+lemma _root_.is_compact.exists_inf_edist_eq_edist (hs : is_compact s) (hne : s.nonempty) :
+  ∃ y ∈ s, inf_edist x s = edist x y :=
+begin
+  have A : continuous (λ y, edist x y) := continuous_const.edist continuous_id,
+  obtain ⟨y, ys, hy⟩ : ∃ y ∈ s, ∀ z, z ∈ s → edist x y ≤ edist x z :=
+    hs.exists_forall_le hne A.continuous_on,
+  exact ⟨y, ys, le_antisymm (inf_edist_le_edist_of_mem ys) (by rwa le_inf_edist)⟩
+end
+
 end inf_edist --section
 
 /-! ### The Hausdorff distance as a function into `ℝ≥0∞`. -/
@@ -825,6 +834,20 @@ open emetric
 /-- The closed `δ`-thickening `cthickening δ E` of a subset `E` in a pseudo emetric space consists
 of those points that are at infimum distance at most `δ` from `E`. -/
 def cthickening (δ : ℝ) (E : set α) : set α := {x : α | inf_edist x E ≤ ennreal.of_real δ}
+
+lemma mem_cthickening_of_edist_le (x y : α) (δ : ℝ) (E : set α) (h : y ∈ E)
+  (h' : edist x y ≤ ennreal.of_real δ) :
+  x ∈ cthickening δ E :=
+(inf_edist_le_edist_of_mem h).trans h'
+
+lemma mem_cthickening_of_dist_le {α : Type*} [pseudo_metric_space α]
+  (x y : α) (δ : ℝ) (E : set α) (h : y ∈ E) (h' : dist x y ≤ δ) :
+  x ∈ cthickening δ E :=
+begin
+  apply mem_cthickening_of_edist_le x y δ E h,
+  rw edist_dist,
+  exact ennreal.of_real_le_of_real h',
+end
 
 lemma cthickening_eq_preimage_inf_edist (δ : ℝ) (E : set α) :
   cthickening δ E = (λ x, inf_edist x E) ⁻¹' (Iic (ennreal.of_real δ)) := rfl
