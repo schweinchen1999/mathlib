@@ -150,7 +150,7 @@ variables [measurable_space E] [finite_dimensional ℝ E] [borel_space E]
 
 open_locale ennreal
 
-lemma tendsto_add_haar_cthickening {R : ℝ} (Rpos : 0 < R) {s : set E}
+/- lemma tendsto_measure_cthickening {R : ℝ} (Rpos : 0 < R) {s : set E}
   (hs : μ (cthickening R s) ≠ ∞) :
   tendsto (λ r, μ (cthickening r s)) (𝓝[Ioi 0] 0) (𝓝 (μ (closure s))) :=
 begin
@@ -161,7 +161,7 @@ begin
   { assume i j ipos ij,
     exact cthickening_mono ij _ },
   { exact ⟨R, Rpos, hs⟩ }
-end
+end -/
 
 lemma tendsto_add_haar_preimage_closed_ball_div_add_haar_closed_ball
   (f : local_homeomorph E E) (g : E →L[ℝ] E) (y : E) (y_mem : y ∈ f.target)
@@ -179,9 +179,16 @@ begin
       μ (closed_ball 0 ε + g '' (closed_ball 0 1)) < m * μ (closed_ball 0 1) ∧ 0 < ε,
     { have L1 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
         (𝓝 0) (𝓝 (μ (g '' (closed_ball 0 1)))),
-      { --apply tendsto_add_haar_cthickening,
-        sorry }, --exact (proper_space.is_compact_closed_ball _ _).image g.continuous },
-      have L2 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
+      { have H : is_compact (g '' (closed_ball 0 1)) := sorry,
+        have Z := tendsto_measure_cthickening_of_is_closed,
+
+       }, --exact (proper_space.is_compact_closed_ball _ _).image g.continuous },
+      }
+    }
+end
+
+
+#exit  have L2 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
         (𝓝 0) (𝓝 (d * μ (closed_ball 0 1))),
       { convert L1,
         exact (add_haar_image_continuous_linear_map _ _ _).symm },

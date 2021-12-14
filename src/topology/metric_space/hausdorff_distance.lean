@@ -800,7 +800,7 @@ begin
     exact lt_of_le_of_lt (@inf_edist_le_edist_of_mem _ _ x _ _ hzE) hxz, },
 end
 
-variables {X : Type u} [metric_space X]
+variables {X : Type u} [pseudo_metric_space X]
 
 /-- A point in a metric space belongs to the (open) `δ`-thickening of a subset `E` if and only if
 it is at distance less than `δ` from some point of `E`. -/
@@ -822,6 +822,18 @@ union of balls of radius `δ` centered at points of `E`. -/
 lemma thickening_eq_bUnion_ball {δ : ℝ} {E : set X} :
   thickening δ E = ⋃ x ∈ E, ball x δ :=
 by { ext x, rw mem_bUnion_iff, exact mem_thickening_iff E x, }
+
+lemma bounded.thickening {δ : ℝ} {E : set X} (h : bounded E) :
+  bounded (thickening δ E) :=
+begin
+  refine bounded_iff_mem_bounded.2 (λ x hx, _),
+  rcases h.subset_ball x with ⟨R, hR⟩,
+  refine (bounded_iff_subset_ball x).2 ⟨R + δ, _⟩,
+  assume y hy,
+  rcases (mem_thickening_iff _ _).1 hy with ⟨z, zE, hz⟩,
+  calc dist y x ≤ dist z x + dist y z : by { rw add_comm, exact dist_triangle _ _ _ }
+  ... ≤ R + δ : add_le_add (hR zE) hz.le
+end
 
 end thickening --section
 
@@ -896,6 +908,15 @@ by { intros x hx, rw [thickening, mem_set_of_eq] at hx, exact hx.le, }
 lemma thickening_subset_cthickening_of_le {δ₁ δ₂ : ℝ} (hle : δ₁ ≤ δ₂) (E : set α) :
   thickening δ₁ E ⊆ cthickening δ₂ E :=
 (thickening_subset_cthickening δ₁ E).trans (cthickening_mono hle E)
+
+lemma bounded.cthickening {α : Type*} [pseudo_metric_space α] {δ : ℝ} {E : set α} (h : bounded E) :
+  bounded (cthickening δ E) :=
+begin
+  have : bounded (thickening (max (δ + 1) 1) E) := h.thickening,
+  apply bounded.mono _ this,
+  exact cthickening_subset_thickening' (zero_lt_one.trans_le (le_max_right _ _))
+    ((lt_add_one _).trans_le (le_max_left _ _)) _
+end
 
 lemma cthickening_eq_Inter_cthickening {δ : ℝ} {E : set α} (δ_nn : 0 ≤ δ) :
   cthickening δ E = ⋂ (ε : ℝ) (h : δ < ε), cthickening ε E :=
