@@ -1309,6 +1309,7 @@ lemma measurable.inf_nndist {f : β → α} (hf : measurable f) {s : set α} :
   measurable (λ x, inf_nndist (f x) s) :=
 measurable_inf_nndist.comp hf
 
+section
 variables [second_countable_topology α]
 
 @[measurability]
@@ -1328,6 +1329,8 @@ continuous_nndist.measurable
 lemma measurable.nndist {f g : β → α} (hf : measurable f) (hg : measurable g) :
   measurable (λ b, nndist (f b) (g b)) :=
 (@continuous_nndist α _).measurable2 hf hg
+
+end
 
 lemma tendsto_measure_cthickening {μ : measure α} {s : set α}
   (hs : ∃ R > 0, μ (cthickening R s) ≠ ∞) :

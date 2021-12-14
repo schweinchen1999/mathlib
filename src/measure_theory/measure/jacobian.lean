@@ -12,16 +12,69 @@ import analysis.normed_space.pointwise
 
 The goal of this file is to prove the change of variables formula for local diffeomorphisms in
 higher dimension. For now, there is only the preliminary fact that, locally, the volume of balls
-is scaled according to the jacobian of the map, in
+is rescaled according to the jacobian of the map, in
 `tendsto_add_haar_preimage_closed_ball_div_add_haar_closed_ball`
-
 -/
 
 variables {E : Type*} [normed_group E] [normed_space ℝ E]
           {F : Type*} [normed_group F] [normed_space ℝ F]
 
 open metric set asymptotics filter measure_theory measure_theory.measure finite_dimensional
-open_locale pointwise topological_space
+open_locale pointwise topological_space ennreal
+
+/-- Consider a map `f` with a derivative `f'` at a point `x`. For small enough `r`, the image under
+`f` of the ball `closed_ball x r` resembles its under image `f'`. Here, we show that it is
+eventually contained in the `ε r` thickening of `f' '' (closed_ball 0 r)`, for any fixed
+positive `ε`. -/
+lemma eventually_image_closed_ball_subset_image_closed_ball_fderiv
+  {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+    f '' (closed_ball x r) ⊆ closed_ball (f x) (ε * r) + f' '' (closed_ball 0 r) :=
+begin
+  obtain ⟨R, Rpos, hR⟩ : ∃ (R : ℝ) (H : R > 0),
+    closed_ball x R ⊆ {z : E | ∥f z - f x - f' (z - x)∥ ≤ ε * ∥z - x∥} :=
+      nhds_basis_closed_ball.mem_iff.1 (is_o.def hf εpos),
+  have : Ioo (0 : ℝ) R ∈ 𝓝[Ioi (0 : ℝ)] (0 : ℝ) := Ioo_mem_nhds_within_Ioi ⟨le_rfl, Rpos⟩,
+  filter_upwards [this],
+  rintros r hr y ⟨z, hz, rfl⟩,
+  refine set.mem_add.2 ⟨f z - f' (z - x), f' (z - x), _, _, by abel⟩,
+  { simp only [dist_eq_norm, mem_closed_ball],
+    calc ∥f z - f' (z - x) - f x∥
+    = ∥f z - f x - f' (z - x)∥ : by { congr' 1, abel }
+    ... ≤ ε * ∥z - x∥ : hR (closed_ball_subset_closed_ball hr.2.le hz)
+    ... ≤ ε * r : mul_le_mul_of_nonneg_left (mem_closed_ball_iff_norm.1 hz) εpos.le },
+  { apply mem_image_of_mem,
+    simpa only [mem_closed_ball_iff_norm, sub_zero] using hz }
+end
+
+
+/-- Consider a map `f` with a derivative `f'` at a point `x`. For small enough `r`, the image under
+`f` of the ball `closed_ball x r` resembles its under image `f'`. Here, we show that its rescaling
+by `r⁻¹` is eventually contained in the `ε` thickening of `f' '' (closed_ball 0 1)`, for any fixed
+positive `ε`. This form is handy for measure computations as the set on the right hand side does
+not depend on `r`. -/
+lemma eventually_smul_image_closed_ball_subset_image_closed_ball_fderiv
+  {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
+  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
+    r⁻¹ • ({-f x} + f '' (closed_ball x r)) ⊆ closed_ball 0 ε + f' '' (closed_ball 0 1) :=
+begin
+  filter_upwards [eventually_image_closed_ball_subset_image_closed_ball_fderiv hf εpos,
+    self_mem_nhds_within],
+  assume r hr rpos,
+  replace rpos : 0 < r := rpos,
+  have A : r⁻¹ ≠ 0, by simp only [rpos.ne', inv_eq_zero, ne.def, not_false_iff],
+  have B : r⁻¹ * (ε * r) = ε, by field_simp [rpos.ne'],
+  calc r⁻¹ • ({-f x} + f '' closed_ball x r)
+  ⊆ r⁻¹ • ({-f x} + (closed_ball (f x) (ε * r) + f' '' (closed_ball 0 r))) :
+    smul_set_mono (add_subset_add subset.rfl hr)
+  ... = closed_ball 0 ε + f' '' closed_ball 0 1 : begin
+    rw [← add_assoc, singleton_add_closed_ball, add_left_neg, smul_add_set, ← f'.image_smul_set,
+      smul_closed_ball' A, smul_closed_ball' A],
+    simp only [real.norm_eq_abs, smul_zero, abs_of_nonneg (inv_nonneg.2 rpos.le),
+      inv_mul_cancel rpos.ne', B],
+  end
+end
+
 
 /-- Consider a map `f` with an invertible derivative `f'` at a point `x`. Then the preimage under
 `f` of a small ball `closed_ball (f x) r` around `f x` resembles its preimage under `f'`.
@@ -92,78 +145,15 @@ begin
     abs_of_nonneg rpos.le, smul_zero, mul_comm],
 end
 
-/-- Consider a map `f` with a derivative `f'` at a point `x`. For small enough `r`, the image under
-`f` of the ball `closed_ball x r` resembles its under image `f'`. Here, we show that it is
-eventually contained in the `ε r` thickening of `f' '' (closed_ball 0 r)`, for any fixed
-positive `ε`. -/
-lemma eventually_image_closed_ball_subset_image_closed_ball_fderiv
-  {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-    f '' (closed_ball x r) ⊆ closed_ball (f x) (ε * r) + f' '' (closed_ball 0 r) :=
-begin
-  obtain ⟨R, Rpos, hR⟩ : ∃ (R : ℝ) (H : R > 0),
-    closed_ball x R ⊆ {z : E | ∥f z - f x - f' (z - x)∥ ≤ ε * ∥z - x∥} :=
-      nhds_basis_closed_ball.mem_iff.1 (is_o.def hf εpos),
-  have : Ioo (0 : ℝ) R ∈ 𝓝[Ioi (0 : ℝ)] (0 : ℝ) := Ioo_mem_nhds_within_Ioi ⟨le_rfl, Rpos⟩,
-  filter_upwards [this],
-  rintros r hr y ⟨z, hz, rfl⟩,
-  refine set.mem_add.2 ⟨f z - f' (z - x), f' (z - x), _, _, by abel⟩,
-  { simp only [dist_eq_norm, mem_closed_ball],
-    calc ∥f z - f' (z - x) - f x∥
-    = ∥f z - f x - f' (z - x)∥ : by { congr' 1, abel }
-    ... ≤ ε * ∥z - x∥ : hR (closed_ball_subset_closed_ball hr.2.le hz)
-    ... ≤ ε * r : mul_le_mul_of_nonneg_left (mem_closed_ball_iff_norm.1 hz) εpos.le },
-  { apply mem_image_of_mem,
-    simpa only [mem_closed_ball_iff_norm, sub_zero] using hz }
-end
-
-
-/-- Consider a map `f` with a derivative `f'` at a point `x`. For small enough `r`, the image under
-`f` of the ball `closed_ball x r` resembles its under image `f'`. Here, we show that its rescaling
-by `r⁻¹` is eventually contained in the `ε` thickening of `f' '' (closed_ball 0 1)`, for any fixed
-positive `ε`. This form is handy for measure computations as the set on the right hand side does
-not depend on `r`. -/
-lemma eventually_smul_image_closed_ball_subset_image_closed_ball_fderiv
-  {f : E → F} {x : E} {f' : E →L[ℝ] F} (hf : has_fderiv_at f f' x) {ε : ℝ} (εpos : 0 < ε) :
-  ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
-    r⁻¹ • ({-f x} + f '' (closed_ball x r)) ⊆ closed_ball 0 ε + f' '' (closed_ball 0 1) :=
-begin
-  filter_upwards [eventually_image_closed_ball_subset_image_closed_ball_fderiv hf εpos,
-    self_mem_nhds_within],
-  assume r hr rpos,
-  replace rpos : 0 < r := rpos,
-  have A : r⁻¹ ≠ 0, by simp only [rpos.ne', inv_eq_zero, ne.def, not_false_iff],
-  have B : r⁻¹ * (ε * r) = ε, by field_simp [rpos.ne'],
-  calc r⁻¹ • ({-f x} + f '' closed_ball x r)
-  ⊆ r⁻¹ • ({-f x} + (closed_ball (f x) (ε * r) + f' '' (closed_ball 0 r))) :
-    smul_set_mono (add_subset_add subset.rfl hr)
-  ... = closed_ball 0 ε + f' '' closed_ball 0 1 : begin
-    rw [← add_assoc, singleton_add_closed_ball, add_left_neg, smul_add_set, ← f'.image_smul_set,
-      smul_closed_ball' A, smul_closed_ball' A],
-    simp only [real.norm_eq_abs, smul_zero, abs_of_nonneg (inv_nonneg.2 rpos.le),
-      inv_mul_cancel rpos.ne', B],
-  end
-end
-
 variables [measurable_space E] [finite_dimensional ℝ E] [borel_space E]
   (μ : measure E) [is_add_haar_measure μ]
 
-open_locale ennreal
-
-/- lemma tendsto_measure_cthickening {R : ℝ} (Rpos : 0 < R) {s : set E}
-  (hs : μ (cthickening R s) ≠ ∞) :
-  tendsto (λ r, μ (cthickening r s)) (𝓝[Ioi 0] 0) (𝓝 (μ (closure s))) :=
-begin
-  rw closure_eq_Inter_cthickening,
-  apply tendsto_measure_bInter_pos,
-  { assume r hr,
-    exact is_closed_cthickening.measurable_set },
-  { assume i j ipos ij,
-    exact cthickening_mono ij _ },
-  { exact ⟨R, Rpos, hs⟩ }
-end -/
-
-lemma tendsto_add_haar_preimage_closed_ball_div_add_haar_closed_ball
+/-- Consider a local homeomorphism `f`. Assume that `f.symm` has a derivative `g` at a point `y`.
+Then `f` locally rescales volume according to the determinant of the derivative `g` of `f.symm`.
+More precisely, the ratio of the Lebesgue measures of `f ⁻¹' (closed_ball y r)` and
+of `closed_ball y r` converges to the absolute value of the determinant of `g` as `r` tends
+to zero. -/
+theorem tendsto_add_haar_preimage_closed_ball_div_add_haar_closed_ball
   (f : local_homeomorph E E) (g : E →L[ℝ] E) (y : E) (y_mem : y ∈ f.target)
   (h : has_fderiv_at f.symm g y) :
   tendsto (λ r, μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r)) (𝓝[Ioi (0 : ℝ)] 0)
@@ -172,24 +162,34 @@ begin
   let d := ennreal.of_real (abs (g : E →ₗ[ℝ] E).det),
   let x := f.symm y,
   have x_mem : x ∈ f.source := f.map_target y_mem,
+  /- First show that the ratio of measures is asymptotically bounded above by the determinant.
+  For this, we have to show that the measure of the preimage of a ball under `f` is small.
+  We rewrite this preimage as a direct image under `f.symm`, and use
+  `eventually_smul_image_closed_ball_subset_image_closed_ball_fderiv` to say that is contained
+  in a small thickening of `g '' (closed_ball 0 1)`, whose measure is controlled by that of
+  `g '' (closed_ball 0 1)` if the neighborhood is small enough, which in turn is controlled by the
+  determinant of `g`. -/
   have A : ∀ m, d < m → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
       μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r) < m,
   { assume m hm,
+    -- construct a small neighborhood of `g '' (closed_ball 0 1)` with measure comparable to
+    -- the determinant of `g`.
     obtain ⟨ε, hε, εpos⟩ : ∃ (ε : ℝ),
       μ (closed_ball 0 ε + g '' (closed_ball 0 1)) < m * μ (closed_ball 0 1) ∧ 0 < ε,
-    { have L1 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
-        (𝓝 0) (𝓝 (μ (g '' (closed_ball 0 1)))),
-      { have H : is_compact (g '' (closed_ball 0 1)) := sorry,
-        have Z := tendsto_measure_cthickening_of_is_closed,
-
-       }, --exact (proper_space.is_compact_closed_ball _ _).image g.continuous },
-      }
-    }
-end
-
-
-#exit  have L2 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
-        (𝓝 0) (𝓝 (d * μ (closed_ball 0 1))),
+    { have HC : is_compact (g '' closed_ball 0 1) :=
+        (proper_space.is_compact_closed_ball _ _).image g.continuous,
+      have L0 : tendsto (λ ε, μ (cthickening ε (g '' (closed_ball 0 1))))
+        (𝓝[Ioi 0] 0) (𝓝 (μ (g '' (closed_ball 0 1)))),
+      { apply tendsto.mono_left _ nhds_within_le_nhds,
+        exact tendsto_measure_cthickening_of_is_compact HC },
+      have L1 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
+        (𝓝[Ioi 0] 0) (𝓝 (μ (g '' (closed_ball 0 1)))),
+      { apply L0.congr' _,
+        filter_upwards [self_mem_nhds_within],
+        assume r hr,
+        rw [HC.cthickening_eq_add_closed_ball (le_of_lt hr), add_comm] },
+      have L2 : tendsto (λ ε, μ (closed_ball 0 ε + g '' (closed_ball 0 1)))
+        (𝓝[Ioi 0] 0) (𝓝 (d * μ (closed_ball 0 1))),
       { convert L1,
         exact (add_haar_image_continuous_linear_map _ _ _).symm },
       have I : d * μ (closed_ball 0 1) < m * μ (closed_ball 0 1) :=
@@ -197,8 +197,10 @@ end
           (add_haar_closed_ball_lt_top μ 0 1).ne).2 hm,
       have H : ∀ᶠ (b : ℝ) in 𝓝[Ioi 0] 0,
         μ (closed_ball 0 b + ⇑g '' closed_ball 0 1) < m * μ (closed_ball 0 1) :=
-          nhds_within_le_nhds ((tendsto_order.1 L2).2 _ I),
+          (tendsto_order.1 L2).2 _ I,
       exact (H.and self_mem_nhds_within).exists },
+    -- for small enough `r`, the image of a small ball `closed_ball y r` under `f.symm` is contained
+    -- in the `ε`-thickening of `g '' (closed_ball 0 1)`, and coincides with the preimage under `f`.
     have R1 : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
       r⁻¹ • ({-x} + f.symm '' (closed_ball y r)) ⊆ closed_ball 0 ε + g '' (closed_ball 0 1) :=
         eventually_smul_image_closed_ball_subset_image_closed_ball_fderiv h εpos,
@@ -214,6 +216,8 @@ end
         simp only [inter_eq_right_iff_subset.mpr hr, ←inter_assoc, inter_self] },
       simpa only [inter_eq_right_iff_subset.mpr hr, ←inter_assoc, inter_self]
         using this.symm_image_eq.symm },
+    -- for such an `r`, one checks that the desired upper bound on the ratio of the Lebesgue
+    -- measures of `f ⁻¹' (closed_ball y r)` and of `closed_ball y r` holds.
     filter_upwards [R1, R2, self_mem_nhds_within],
     assume r hr1 hr2 rpos,
     change 0 < r at rpos,
@@ -236,27 +240,40 @@ end
         using (pow_pos rpos _).ne' },
     rwa [hr2, ennreal.div_lt_iff (or.inl (add_haar_closed_ball_pos μ y rpos).ne')
           (or.inl (add_haar_closed_ball_lt_top μ y r).ne)] },
+  /- Let us now prove that the ratio of measures is asymptotically larger than the determinant.
+  For this, we have to show that the measure of the preimage of a ball under `f` is large. We rely
+  on `eventually_preimage_fderiv_closed_ball_subset_inter_preimage_closed_ball`, which says that
+  this preimage contains a slightly rescaled preimage of the ball under `g`. This statement requires
+  `g` to be invertible, but it is not an issue since there is nothing to prove if `g` is
+  not invertible. -/
   have B : ∀ l, l < d → ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
       l < μ (f.source ∩ f ⁻¹' (closed_ball y r)) / μ (closed_ball y r),
   { assume l hl,
+    -- we can assume that the determinant of `g` is nonzero, as otherwise there is nothing to prove.
     rcases eq_or_lt_of_le (abs_nonneg _ : 0 ≤ abs (g : E →ₗ[ℝ] E).det) with h|detpos,
     { simp only [d, ←h, ennreal.not_lt_zero, ennreal.of_real_zero] at hl, exact false.elim hl },
     have : (g : E →ₗ[ℝ] E).det ≠ 0 :=
       λ h, by simpa only [h, lt_self_iff_false, abs_zero] using detpos,
     let G : E ≃L[ℝ] E := (linear_map.equiv_of_det_ne_zero _ this).to_continuous_linear_equiv,
     let f' : E →L[ℝ] E := G.symm,
+    -- then `f` is differentiable at `f.symm y`, with derivative the inverse of `g`
     have h' : has_fderiv_at f.symm (G : E →L[ℝ] E) y := h,
     have hff' : has_fderiv_at f f' x :=
       local_homeomorph.has_fderiv_at_symm' f.symm y_mem h',
-    have L : tendsto (λ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d) (𝓝[Ico 0 1] 1)
-      (𝓝 (ennreal.of_real (1 ^ finrank ℝ E) * d)),
-    { apply ennreal.tendsto.mul_const _ (or.inr ennreal.of_real_ne_top),
-      apply ennreal.tendsto_of_real (tendsto.pow _ _),
-      exact nhds_within_le_nhds, },
-    simp only [one_pow, one_mul, ennreal.of_real_one] at L,
-    haveI : (𝓝[Ico (0 : ℝ) 1] 1).ne_bot := right_nhds_within_Ico_ne_bot zero_lt_one,
+    -- choose a rescaling factor `t` so close enough to `1` that it does not spoil the estimates.
     obtain ⟨t, tlim, ht⟩ : ∃ (t : ℝ), l < ennreal.of_real (t ^ finrank ℝ E) * d ∧
-      t ∈ Ico (0 : ℝ) 1 := (((tendsto_order.1 L).1 _ hl).and self_mem_nhds_within).exists,
+      t ∈ Ico (0 : ℝ) 1,
+    { have L : tendsto (λ (t : ℝ), ennreal.of_real (t ^ finrank ℝ E) * d) (𝓝[Ico 0 1] 1)
+        (𝓝 (ennreal.of_real (1 ^ finrank ℝ E) * d)),
+      { apply ennreal.tendsto.mul_const _ (or.inr ennreal.of_real_ne_top),
+        apply ennreal.tendsto_of_real (tendsto.pow _ _),
+        exact nhds_within_le_nhds, },
+      simp only [one_pow, one_mul, ennreal.of_real_one] at L,
+      haveI : (𝓝[Ico (0 : ℝ) 1] 1).ne_bot := right_nhds_within_Ico_ne_bot zero_lt_one,
+      exact (((tendsto_order.1 L).1 _ hl).and self_mem_nhds_within).exists },
+    -- use `eventually_preimage_fderiv_closed_ball_subset_inter_preimage_closed_ball` to compare
+    -- the measures of the preimage under `f'` of a ball of radius `t * r` and under `f` of a
+    -- ball of radius `r`.
     have : ∀ᶠ r in 𝓝[Ioi (0 : ℝ)] (0 : ℝ),
       ennreal.of_real (r ^ finrank ℝ E) * ennreal.of_real (t ^ finrank ℝ E)
         * d * μ (closed_ball 0 1) ≤ μ (f.source ∩ f ⁻¹' (closed_ball y r)),
@@ -281,6 +298,7 @@ end
         end
       ... ≤ μ (f.source ∩ f ⁻¹' (closed_ball (f x) r)) : measure_mono hr
       ... = μ (f.source ∩ f ⁻¹' (closed_ball y r)) : by simp only [y_mem, f.right_inv], },
+    -- conclude using the previous estimate and the good choice of `t`.
     filter_upwards [this, self_mem_nhds_within],
     assume r hr rpos,
     change 0 < r at rpos,
@@ -289,5 +307,7 @@ end
       (or.inl (add_haar_closed_ball_lt_top μ _ _).ne), add_haar_closed_ball' μ _ rpos.le],
     convert hr using 1,
     ring },
+  /- We have showed that the ratio of measures is asymptotically both smaller and larger than
+  the determinant. This concludes the proof. -/
   exact tendsto_order.2 ⟨B, A⟩
 end
