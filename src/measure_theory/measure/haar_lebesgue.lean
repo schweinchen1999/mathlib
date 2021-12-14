@@ -260,7 +260,7 @@ equal to `μ s` times the absolute value of the inverse of the determinant of `f
 begin
   have A : (f : E →ₗ[ℝ] E).det ≠ 0 := (linear_equiv.is_unit_det' f).ne_zero,
   convert add_haar_preimage_linear_map μ A s,
-  simp only [linear_equiv.det_symm],
+  simp only [linear_equiv.det_coe_symm]
 end
 
 /-- The preimage of a set `s` under a continuous linear equiv `f` has measure
