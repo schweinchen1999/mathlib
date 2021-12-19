@@ -194,7 +194,7 @@ begin
         exact (add_haar_image_continuous_linear_map _ _ _).symm },
       have I : d * μ (closed_ball 0 1) < m * μ (closed_ball 0 1) :=
         (ennreal.mul_lt_mul_right ((add_haar_closed_ball_pos μ _ zero_lt_one).ne')
-          (add_haar_closed_ball_lt_top μ 0 1).ne).2 hm,
+          measure_closed_ball_lt_top.ne).2 hm,
       have H : ∀ᶠ (b : ℝ) in 𝓝[Ioi 0] 0,
         μ (closed_ball 0 b + ⇑g '' closed_ball 0 1) < m * μ (closed_ball 0 1) :=
           (tendsto_order.1 L2).2 _ I,
@@ -239,7 +239,7 @@ begin
       simpa only [abs_nonpos_iff, ennreal.of_real_eq_zero, inv_eq_zero, ne.def]
         using (pow_pos rpos _).ne' },
     rwa [hr2, ennreal.div_lt_iff (or.inl (add_haar_closed_ball_pos μ y rpos).ne')
-          (or.inl (add_haar_closed_ball_lt_top μ y r).ne)] },
+          (or.inl measure_closed_ball_lt_top.ne)] },
   /- Let us now prove that the ratio of measures is asymptotically larger than the determinant.
   For this, we have to show that the measure of the preimage of a ball under `f` is large. We rely
   on `eventually_preimage_fderiv_closed_ball_subset_inter_preimage_closed_ball`, which says that
@@ -304,7 +304,7 @@ begin
     change 0 < r at rpos,
     apply tlim.trans_le,
     rw [ennreal.le_div_iff_mul_le (or.inl (add_haar_closed_ball_pos μ _ rpos).ne')
-      (or.inl (add_haar_closed_ball_lt_top μ _ _).ne), add_haar_closed_ball' μ _ rpos.le],
+      (or.inl measure_closed_ball_lt_top.ne), add_haar_closed_ball' μ _ rpos.le],
     convert hr using 1,
     ring },
   /- We have showed that the ratio of measures is asymptotically both smaller and larger than
