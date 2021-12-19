@@ -53,7 +53,7 @@ linear map
 -/
 
 open function
-open_locale big_operators pointwise
+open_locale big_operators
 
 universes u u' v w x y z
 variables {R : Type*} {R₁ : Type*} {R₂ : Type*} {R₃ : Type*}
