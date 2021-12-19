@@ -649,15 +649,6 @@ theorem frontier_closed_ball [semi_normed_space ℝ E] (x : E) {r : ℝ} (hr : 0
 by rw [frontier, closure_closed_ball, interior_closed_ball x hr,
   closed_ball_diff_ball]
 
-theorem smul_ball {c : α} (hc : c ≠ 0) (x : E) (r : ℝ) :
-  c • ball x r = ball (c • x) (∥c∥ * r) :=
-begin
-  ext y,
-  rw mem_smul_set_iff_inv_smul_mem₀ hc,
-  conv_lhs { rw ←inv_smul_smul₀ hc x },
-  simp [← div_eq_inv_mul, div_lt_iff (norm_pos_iff.2 hc), mul_comm _ r, dist_smul],
-end
-
 theorem smul_sphere' {c : α} (hc : c ≠ 0) (x : E) (r : ℝ) :
   c • sphere x r = sphere (c • x) (∥c∥ * r) :=
 begin
