@@ -1073,13 +1073,8 @@ instance : lattice_add_comm_group (α →ᵇ β) :=
   ..bounded_continuous_function.lattice, }
 
 instance : normed_lattice_add_comm_group (α →ᵇ β) :=
-{ solid :=
-  begin
-    intros f g h,
-    have i1: ∀ t, ∥f t∥ ≤ ∥g t∥ := λ t, solid (h t),
-    rw norm_le (norm_nonneg _),
-    exact λ t, (i1 t).trans (norm_coe_le_norm g t),
-  end,
+{ solid := λ f g h, (norm_le (norm_nonneg _)).mpr
+    (λ t, (solid (h t)).trans (norm_coe_le_norm g t)),
   ..bounded_continuous_function.normed_group,
   ..bounded_continuous_function.lattice_add_comm_group, }
 
